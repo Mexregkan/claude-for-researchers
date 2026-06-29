@@ -9,6 +9,22 @@ Versioning is calendar-based (`vYYYY.MM`): this is a guide and a copy-in starter
 pack, not a linked library, so there is no API to break — the version answers
 "how current is my copy?", nothing more.
 
+## v2026.06 — 2026-06-29 (update)
+
+### Added
+- **distill — a token filter for research command output (now referenced in the guide).**
+  distill is a separate, optional companion tool (its own public repo:
+  [github.com/Mexregkan/distill](https://github.com/Mexregkan/distill)) that filters the
+  long, noisy output of research commands — `pdflatex`, `wolframscript`, Python numerics —
+  before Claude reads it, while writing the complete raw output to a file so nothing is
+  lost. It keeps errors, warnings, results, and Wolfram kernel messages, **never alters
+  numbers**, and removes ~90% of a typical LaTeX compile; a regression suite plus sampled
+  audits back the savings claim. See the new "distill" section in the README. It is *not* a
+  drop-in starter file — install it from its own repo — and its Python filter is still
+  experimental.
+
+---
+
 ## v2026.06 — 2026-06-22 (update)
 
 ### Added

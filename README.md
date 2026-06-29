@@ -64,15 +64,16 @@ This guide serves two audiences at once, so it is organised in parts:
 12. [Settings and hooks](#settings-and-hooks)
 13. [Group projects: shared vs personal configuration](#group-projects-shared-vs-personal-configuration)
 14. [Reducing token consumption: rtk](#reducing-token-consumption-rtk)
-15. [GitHub README and LaTeX](#github-readme-and-latex)
+15. [distill: filtering noisy research-command output](#distill-filtering-noisy-research-command-output)
+16. [GitHub README and LaTeX](#github-readme-and-latex)
 
 **[Part IV: What Claude gets wrong](#part-iv-what-claude-gets-wrong)** — *required reading*
 
-16. [Honest limitations](#honest-limitations)
+17. [Honest limitations](#honest-limitations)
 
 **[Appendix](#appendix)**
 
-17. [Templates and scripts in this repo](#templates-and-scripts-in-this-repo)
+18. [Templates and scripts in this repo](#templates-and-scripts-in-this-repo)
 
 ---
 
@@ -1980,6 +1981,43 @@ wrong, run the command directly in a terminal to see the raw output.
 Across a 30-minute session on a medium-sized project, the total saving is typically
 around 80%. On a long research session with many git operations and test runs, the
 difference is significant.
+
+---
+
+## distill: filtering noisy research-command output
+
+`rtk` (above) trims the dev commands Claude runs constantly. **distill** is its
+research-specific companion: it does the same job for the *long, chatty* commands a
+research session generates — a `pdflatex` compile, a `wolframscript` kernel job, a Python
+numerics run — where the output is mostly noise wrapped around the few lines you actually
+need. distill runs the command, prints a filtered digest, and writes the **complete** raw
+output to a file whose path appears in the digest header, so a filtering mistake costs you
+a glance, never data.
+
+It follows one rule that matters for research: **filter noise, never results.** What it
+always keeps: LaTeX errors, overfull/underfull boxes, and rerun flags; every Wolfram
+`Symbol::tag` kernel message (even one buried inside an elided block); Python
+`Warning`/`Error` lines. What it cuts: package-loading chatter, repeated boxes, giant
+expressions (elided with a marker), and runs of identical lines. On real use it removes
+~90% of a typical LaTeX compile. It **never alters a number** — a high-precision value is
+signal, so distill leaves it exactly as the kernel printed it.
+
+Unlike the rest of this toolkit, distill is a **separate, optional tool with its own
+repository** — not a drop-in starter file:
+
+```bash
+git clone https://github.com/Mexregkan/distill.git
+ln -s "$PWD/distill/bin/distill" ~/.local/bin/distill   # any directory on your PATH
+distill selftest                                        # should print: 5/5 cases passed
+```
+
+Then prefix the noisy commands — `distill pdflatex …`, `distill wolframscript -file …`,
+`distill python3 …` — or copy its `docs/DISTILL.md` into your `~/.claude/` so Claude does
+it automatically. Run `distill gain` any time to see the savings (trust the *median/run*
+column). Two cautions: don't use distill where stdout is piped or redirected (it prints a
+digest, not the program's real output), and the Python filter is still experimental. The
+full design, trust model, and verification story (a regression suite plus sampled audits)
+are in the [distill repository](https://github.com/Mexregkan/distill).
 
 ---
 
