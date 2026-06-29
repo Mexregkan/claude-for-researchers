@@ -2008,7 +2008,7 @@ repository** — not a drop-in starter file:
 ```bash
 git clone https://github.com/Mexregkan/distill.git
 ln -s "$PWD/distill/bin/distill" ~/.local/bin/distill   # any directory on your PATH
-distill selftest                                        # should print: 5/5 cases passed
+distill selftest                                        # should print: all cases passed
 ```
 
 Then prefix the noisy commands — `distill pdflatex …`, `distill wolframscript -file …`,
