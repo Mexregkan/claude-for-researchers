@@ -23,6 +23,12 @@ pack, not a linked library, so there is no API to break — the version answers
   drop-in starter file — install it from its own repo — and its Python filter is still
   experimental.
 
+### Clarified
+- **Added a formal `LICENSE` file (MIT).** The README already stated the toolkit is MIT, but
+  there was no `LICENSE` file — so GitHub didn't register the license and the grant was only
+  prose. The repo now ships the actual MIT license text covering the scripts, skills, and
+  starter package. No change to terms; it just makes the existing MIT promise legally real.
+
 ---
 
 ## v2026.06 — 2026-06-22 (update)

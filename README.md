@@ -2314,4 +2314,4 @@ in Part I.
 
 ## License
 
-MIT. Use, adapt, and share freely.
+MIT — see [LICENSE](LICENSE). Use, adapt, and share freely.
