@@ -1570,6 +1570,15 @@ display-only annoyance the kernel never noticed, but a confusing one to read
 with no other changes). Output cells are not preserved — re-run them after opening the
 `.wb`. Convert once, then work in `.wb` going forward.
 
+**A discipline worth knowing when Claude drives the kernel.** Kernel error messages — an
+undefined symbol (`ReplaceAll::reps`), a structure mismatch (`Set::shape`), a forward-reference
+to something defined in a later cell — are *stop-and-fix* signals, not noise: one undefined
+symbol silently invalidates everything built on top of it. And because Wolfbook re-displays a
+cell's **cached** output, a clean-looking cell can hide a fresh error (or show a stale one), so
+state must be confirmed by *evaluating* (`ValueQ`, `Head`, `FreeQ`) rather than by reading what a
+cell shows. The [`wolfram-headless`](starter/.claude/skills/wolfram-headless/SKILL.md) skill
+encodes this so Claude does it by default.
+
 **Optional: patch the splitter at the root.** The line-splitting above has a sharp
 edge — a `(* ... *)` comment placed right after an operator (e.g. `x :=(*note*)` with
 the right-hand side on the next line) hides the operator from the splitter, which then
@@ -2296,7 +2305,7 @@ in Part I.
 | [`starter/.claude/skills/sync-brief/SKILL.md`](starter/.claude/skills/sync-brief/SKILL.md) | Skill: propagate load-bearing changes from workbook.tex to brief.tex |
 | [`starter/.claude/skills/nb-to-wolfbook/SKILL.md`](starter/.claude/skills/nb-to-wolfbook/SKILL.md) | Skill: convert .nb notebooks and .m scripts to Wolfbook's .wb format, made bridge-safe (each statement on one line, so the MCP evaluates them faithfully) and de-rectangled (private-font operators `==`/`->`/`:>`/`I`/`E` → ASCII so they don't render as empty boxes in VS Code). Ships helper scripts `nb2wb.py`, `nb2wb_extract.wls`, `wl_normalize.py` (`--puafix`/`--check` CLIs) |
 | [`starter/.claude/skills/sync-wb-nb/SKILL.md`](starter/.claude/skills/sync-wb-nb/SKILL.md) | Skill: propagate .wb edits into the paired .nb, keeping it in sync for Mathematica collaborators |
-| [`starter/.claude/skills/wolfram-headless/SKILL.md`](starter/.claude/skills/wolfram-headless/SKILL.md) | Skill: run heavy headless `wolframscript` reliably — why "license error" usually means a memory crash, and why literal Greek in `.wls` silently corrupts symbols. Ships `scripts/greek2esc.py` and an opt-in `hooks/wolfram-license-notice.sh` |
+| [`starter/.claude/skills/wolfram-headless/SKILL.md`](starter/.claude/skills/wolfram-headless/SKILL.md) | Skill: run heavy headless `wolframscript` reliably — why "license error" usually means a memory crash, why literal Greek in `.wls` silently corrupts symbols, and why to treat kernel errors (undefined symbols, structure mismatches) as stop-and-fix and verify state by *evaluating*, not by reading cached output. Ships `scripts/greek2esc.py` and an opt-in `hooks/wolfram-license-notice.sh` |
 | [`starter/.claude/skills/verify-citation/SKILL.md`](starter/.claude/skills/verify-citation/SKILL.md) | Skill: verify a paper exists on Semantic Scholar / arXiv before writing it as a citation |
 | [`starter/.claude/skills/reality-check/SKILL.md`](starter/.claude/skills/reality-check/SKILL.md) | Skill: re-derive a contested result in isolation to detect sycophantic capitulation |
 | [`starter/.claude/skills/cross-validate/SKILL.md`](starter/.claude/skills/cross-validate/SKILL.md) | Skill: format a physics claim for cross-model validation against Gemini or ChatGPT |

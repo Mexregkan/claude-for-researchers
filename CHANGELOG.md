@@ -29,6 +29,17 @@ pack, not a linked library, so there is no API to break — the version answers
   prose. The repo now ships the actual MIT license text covering the scripts, skills, and
   starter package. No change to terms; it just makes the existing MIT promise legally real.
 
+### Changed
+- **`wolfram-headless` now encodes "read and act on kernel errors."** A hard-won lesson from real
+  work: a Wolfram kernel error — an undefined symbol (`ReplaceAll::reps`), a structure mismatch
+  (`Set::shape`), a forward-reference to a symbol defined in a later cell — is a *stop-and-fix*
+  signal, not benign noise; one undefined symbol silently invalidates everything downstream. The
+  skill's new RULE 4 says to treat these as stop-and-fix, to **verify state by evaluating**
+  (`ValueQ`/`Head`/`FreeQ`) rather than reading displayed output (the Wolfbook MCP re-shows a cell's
+  *cached* output, which can be stale), and to run a sanity-sweep after multi-cell setup. The README
+  Wolfbook section gained a short note on the same discipline. **Re-copy
+  `starter/.claude/skills/wolfram-headless/` to pick it up.**
+
 ---
 
 ## v2026.06 — 2026-06-22 (update)

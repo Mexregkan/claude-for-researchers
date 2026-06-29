@@ -62,6 +62,37 @@ Heavy jobs exceed MCP/transport timeouts. Always `Put[result, "/tmp/job_result.m
 at the end and poll the file, rather than relying on the returned stdout. Run with Bash
 `run_in_background: true` and a Monitor that greps for `license error|<your done marker>|ABORT`.
 
+## RULE 4 — read kernel errors: undefined-symbol/structure errors are STOP-and-fix, not noise
+
+A human running cells interactively fixes an undefined-symbol error the instant they see it. Do the
+same — never skim past a kernel message as "benign noise." **One undefined symbol silently
+invalidates everything downstream.**
+
+- **Treat these as STOP-and-fix** (an undefined symbol, a cell-order forward-reference, or a typo —
+  NOT a warning to ignore):
+  - `ReplaceAll::reps` ("X is neither a list of replacement rules …") — `X` is **undefined or the
+    wrong type**; a stray `/.` then poisons that symbol's value and propagates downstream.
+  - `Set::shape` (`{a,b}=…` shapes differ) — the RHS didn't return the expected list/structure.
+  - `Part::partd`, `Set::write` / `… is Protected`, and anything reading "… is not defined".
+  - `Syntax::sntxi` ("Incomplete expression") on a cell you just ran — a real split/syntax issue.
+
+  Forward-references (a symbol defined LATER in the file than the cell that uses it) are normal in
+  working notebooks; a single top-to-bottom pass then breaks. Fix: define/run the missing symbol
+  first, then re-run the dependent cells (a second pass).
+
+- **Verify state by EVALUATING, not by reading displayed output.** Confirm a definition took with
+  `ValueQ[sym]`, `Head[sym]`, or `FreeQ[sym, ReplaceAll]` — and pick a check that *survives*
+  evaluation (`FreeQ[_, ReplaceAll]`, `Head[x] === Plus`); a test like `FreeQ[_, foo]` is bogus if
+  `foo[]` evaluates away. **If you drive the kernel through the Wolfbook MCP rather than headless,
+  the displayed cell output is CACHED and can be stale** — `runCell` / `getNotebookContext` may
+  re-show an old error, or hide a fresh one behind clean-looking output. Always confirm by
+  evaluating, never by reading the cell display.
+
+- **Sanity-sweep after any multi-cell setup, before trusting a build.** Evaluate one health check:
+  e.g. `Select[{<your key symbols>}, ! FreeQ[#, ReplaceAll] &]` must return `{}`, and
+  `ValueQ /@ {<your data lists>}` must be all `True`. If anything is dirty, hunt the undefined symbol
+  BEFORE suspecting a real mathematical obstruction.
+
 ## Checklist before launching a heavy wolframscript job
 - [ ] `.wls` is pure ASCII in code (`grep -nP '[^\x00-\x7F]'` clean, or comments only).
 - [ ] `$HistoryLength = 0;` at the top.
@@ -70,6 +101,8 @@ at the end and poll the file, rather than relying on the returned stdout. Run wi
 - [ ] Run in background + Monitor for `license error` and a done-marker.
 - [ ] If it dies with "license error": confirm `$LicenseType` is valid, then treat as a memory crash
       and localize/shrink — or build it in the desktop kernel.
+- [ ] Judge success by EVALUATING key symbols (`ValueQ`/`Head`/`FreeQ`), not by reading output; treat
+      any undefined-symbol/structure error (`ReplaceAll::reps`, `Set::shape`, …) as stop-and-fix.
 
 ## See also
 - `hooks/wolfram-license-notice.sh` (companion hook) — auto-flags the "license error" so the next
