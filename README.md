@@ -262,6 +262,8 @@ soften it.
 >   calculations whose correctness matters (default: yes for research)
 > - `nb-to-wolfbook`, `sync-wb-nb`, `wolfram-headless` — only if I use Mathematica
 >   (`wolfram-headless` also applies to any heavy headless `wolframscript` use)
+> - `wolfbook` — only if I drive Mathematica through the Wolfbook MCP from Claude
+>   (the extension's `wolfbook.mcpEnabled` is on); skip it for headless-only or UI-only use
 > - `overleaf-sync` — only if I mentioned a shared Overleaf project
 >
 > For each skill you selected, check `~/.claude/skills/<name>/SKILL.md` first:
@@ -2282,6 +2284,7 @@ starter/
         ├── nb-to-wolfbook/          ← /nb-to-wolfbook skill (SKILL.md + nb2wb.py, nb2wb_extract.wls, wl_normalize.py)
         ├── sync-wb-nb/              ← /sync-wb-nb skill (SKILL.md + sync-wb-nb.wls)
         ├── wolfram-headless/        ← /wolfram-headless skill (SKILL.md + scripts/greek2esc.py, hooks/wolfram-license-notice.sh)
+        ├── wolfbook/SKILL.md        ← /wolfbook skill (MCP playbook; only if you drive Wolfbook's MCP)
         ├── verify-citation/SKILL.md ← /verify-citation skill
         ├── reality-check/SKILL.md   ← /reality-check skill
         ├── cross-validate/SKILL.md  ← /cross-validate skill
@@ -2311,6 +2314,7 @@ in Part I.
 | [`starter/.claude/skills/nb-to-wolfbook/SKILL.md`](starter/.claude/skills/nb-to-wolfbook/SKILL.md) | Skill: convert .nb notebooks and .m scripts to Wolfbook's .wb format, made bridge-safe (each statement on one line, so the MCP evaluates them faithfully) and de-rectangled (private-font operators `==`/`->`/`:>`/`I`/`E` → ASCII so they don't render as empty boxes in VS Code). Ships helper scripts `nb2wb.py`, `nb2wb_extract.wls`, `wl_normalize.py` (`--puafix`/`--check` CLIs) |
 | [`starter/.claude/skills/sync-wb-nb/SKILL.md`](starter/.claude/skills/sync-wb-nb/SKILL.md) | Skill: propagate .wb edits into the paired .nb, keeping it in sync for Mathematica collaborators |
 | [`starter/.claude/skills/wolfram-headless/SKILL.md`](starter/.claude/skills/wolfram-headless/SKILL.md) | Skill: run heavy headless `wolframscript` reliably — why "license error" usually means a memory crash, why literal Greek in `.wls` silently corrupts symbols, and why to treat kernel errors (undefined symbols, structure mismatches) as stop-and-fix and verify state by *evaluating*, not by reading cached output. Ships `scripts/greek2esc.py` and an opt-in `hooks/wolfram-license-notice.sh` |
+| [`starter/.claude/skills/wolfbook/SKILL.md`](starter/.claude/skills/wolfbook/SKILL.md) | Skill: playbook for driving a **live** Wolfram kernel + `.wb`/`.nb` notebook through the Wolfbook MCP (`mcp__wolfbook__*`) — which tool for which job, the multi-statement/`runCell` pitfalls, kernel checkpoints for safe rollback, and reading kernel errors. Conditional: needs the Wolfbook extension with `wolfbook.mcpEnabled` on. Complements `wolfram-headless` (headless `.wls`) |
 | [`starter/.claude/skills/verify-citation/SKILL.md`](starter/.claude/skills/verify-citation/SKILL.md) | Skill: verify a paper exists on Semantic Scholar / arXiv before writing it as a citation |
 | [`starter/.claude/skills/reality-check/SKILL.md`](starter/.claude/skills/reality-check/SKILL.md) | Skill: re-derive a contested result in isolation to detect sycophantic capitulation |
 | [`starter/.claude/skills/cross-validate/SKILL.md`](starter/.claude/skills/cross-validate/SKILL.md) | Skill: format a physics claim for cross-model validation against Gemini or ChatGPT |

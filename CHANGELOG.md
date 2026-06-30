@@ -9,6 +9,21 @@ Versioning is calendar-based (`vYYYY.MM`): this is a guide and a copy-in starter
 pack, not a linked library, so there is no API to break — the version answers
 "how current is my copy?", nothing more.
 
+## v2026.06 — 2026-06-30 (update)
+
+### Added
+- **`wolfbook` skill — a playbook for driving the live Wolfram kernel via the Wolfbook MCP.**
+  Complements `wolfram-headless` (one-shot `wolframscript`): when you run a *live* kernel + `.wb`/`.nb`
+  notebook through the `mcp__wolfbook__*` tools, this skill picks the right tool for each job (orient →
+  evaluate → edit → checkpoint → look up), flags the multi-statement / `runCell` line-splitting
+  pitfalls, uses kernel checkpoints for safe rollback, and reads kernel errors as stop-and-fix.
+  **Conditional** — install only if you use the Wolfbook MCP (`wolfbook.mcpEnabled` on);
+  `scripts/bootstrap.sh` adds it for Mathematica projects. Every technical claim was verified against
+  the v2.7.14 extension source before publishing (that audit is what caught that `runCell` actually
+  returns fresh output and surfaces messages — see the 2026-06-29 note).
+
+---
+
 ## v2026.06 — 2026-06-29 (update)
 
 ### Added

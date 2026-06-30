@@ -132,6 +132,7 @@ case $NUMERICS in mathematica|both)
     skill nb-to-wolfbook nb2wb.py nb2wb_extract.wls wl_normalize.py
     skill sync-wb-nb sync-wb-nb.wls
     skill wolfram-headless scripts/greek2esc.py hooks/wolfram-license-notice.sh
+    skill wolfbook                                  # MCP playbook (harmless if you don't use the Wolfbook MCP)
     mkdir -p .vscode
     core starter/.vscode/settings.json .vscode/settings.json ;;  # notebook word wrap
 esac
