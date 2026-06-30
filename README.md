@@ -1577,7 +1577,11 @@ symbol silently invalidates everything built on top of it. And because Wolfbook 
 cell's **cached** output, a clean-looking cell can hide a fresh error (or show a stale one), so
 state must be confirmed by *evaluating* (`ValueQ`, `Head`, `FreeQ`) rather than by reading what a
 cell shows. The [`wolfram-headless`](starter/.claude/skills/wolfram-headless/SKILL.md) skill
-encodes this so Claude does it by default.
+encodes this so Claude does it by default. This is the most expensive Wolfbook trap we have hit
+(hours lost to misdiagnosis), so it has its own write-up:
+[`docs/wolfbook-kernel-errors.md`](docs/wolfbook-kernel-errors.md). Note there is **no drop-in
+code patch** for it yet (unlike the splitter fix) — the working fix today is the discipline above;
+a source-level MCP improvement is staged for possible upstream but not verified.
 
 **Optional: patch the splitter at the root.** The line-splitting above has a sharp
 edge — a `(* ... *)` comment placed right after an operator (e.g. `x :=(*note*)` with
@@ -2318,6 +2322,7 @@ in Part I.
 | [`docs/wolfbook-comment-split-fix.md`](docs/wolfbook-comment-split-fix.md) | Full explanation of the Wolfbook comment-split bug and the patch (with the manual one-line edit) |
 | [`scripts/apply-notebook-ux.py`](scripts/apply-notebook-ux.py) | Enable notebook word wrap (cells + output, incl. Wolfram results as wrapping text) + Mathematica-style section-folding keybindings across VS Code / Cursor / VSCodium / Windsurf (idempotent, backs up, `--revert`/`--dry-run`) |
 | [`docs/wolfbook-notebook-ux.md`](docs/wolfbook-notebook-ux.md) | Why notebook word wrap needs the cell-scoped `notebook.editorOptionsCustomizations` key, how built-in section folding works, and how to install both |
+| [`docs/wolfbook-kernel-errors.md`](docs/wolfbook-kernel-errors.md) | The Wolfbook MCP's stale cached-output trap and why a kernel message (undefined symbol, structure mismatch) is stop-and-fix — verify state by *evaluating*, not by reading a cell. Behavioral fix today (the `wolfram-headless` skill); no drop-in patch yet |
 
 ---
 

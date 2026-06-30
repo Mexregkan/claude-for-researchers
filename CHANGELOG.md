@@ -37,7 +37,10 @@ pack, not a linked library, so there is no API to break — the version answers
   skill's new RULE 4 says to treat these as stop-and-fix, to **verify state by evaluating**
   (`ValueQ`/`Head`/`FreeQ`) rather than reading displayed output (the Wolfbook MCP re-shows a cell's
   *cached* output, which can be stale), and to run a sanity-sweep after multi-cell setup. The README
-  Wolfbook section gained a short note on the same discipline. **Re-copy
+  Wolfbook section gained a short note on the same discipline, and there is now a dedicated write-up,
+  [`docs/wolfbook-kernel-errors.md`](docs/wolfbook-kernel-errors.md) — this was the most expensive
+  Wolfbook trap we hit. Note: the fix today is *behavioral* (the skill); there is **no drop-in code
+  patch** for the MCP's stale-output behaviour yet, unlike the splitter fix. **Re-copy
   `starter/.claude/skills/wolfram-headless/` to pick it up.**
 
 ---
