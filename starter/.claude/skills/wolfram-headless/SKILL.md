@@ -83,10 +83,10 @@ invalidates everything downstream.**
 - **Verify state by EVALUATING, not by reading displayed output.** Confirm a definition took with
   `ValueQ[sym]`, `Head[sym]`, or `FreeQ[sym, ReplaceAll]` — and pick a check that *survives*
   evaluation (`FreeQ[_, ReplaceAll]`, `Head[x] === Plus`); a test like `FreeQ[_, foo]` is bogus if
-  `foo[]` evaluates away. **If you drive the kernel through the Wolfbook MCP rather than headless,
-  the displayed cell output is CACHED and can be stale** — `runCell` / `getNotebookContext` may
-  re-show an old error, or hide a fresh one behind clean-looking output. Always confirm by
-  evaluating, never by reading the cell display.
+  `foo[]` evaluates away. **Wolfbook MCP specifics (current v2.7.x):** `runCell` re-runs the cell
+  and surfaces kernel messages in a `⚠ Kernel messages` section — READ and act on it, don't judge
+  from the result line; `getNotebookContext` returns a CACHED snapshot (it does NOT re-evaluate),
+  so never read its outputs as a fresh result. Either way, confirm by evaluating.
 
 - **Sanity-sweep after any multi-cell setup, before trusting a build.** Evaluate one health check:
   e.g. `Select[{<your key symbols>}, ! FreeQ[#, ReplaceAll] &]` must return `{}`, and

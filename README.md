@@ -1573,15 +1573,16 @@ with no other changes). Output cells are not preserved — re-run them after ope
 **A discipline worth knowing when Claude drives the kernel.** Kernel error messages — an
 undefined symbol (`ReplaceAll::reps`), a structure mismatch (`Set::shape`), a forward-reference
 to something defined in a later cell — are *stop-and-fix* signals, not noise: one undefined
-symbol silently invalidates everything built on top of it. And because Wolfbook re-displays a
-cell's **cached** output, a clean-looking cell can hide a fresh error (or show a stale one), so
-state must be confirmed by *evaluating* (`ValueQ`, `Head`, `FreeQ`) rather than by reading what a
-cell shows. The [`wolfram-headless`](starter/.claude/skills/wolfram-headless/SKILL.md) skill
-encodes this so Claude does it by default. This is the most expensive Wolfbook trap we have hit
-(hours lost to misdiagnosis), so it has its own write-up:
-[`docs/wolfbook-kernel-errors.md`](docs/wolfbook-kernel-errors.md). Note there is **no drop-in
-code patch** for it yet (unlike the splitter fix) — the working fix today is the discipline above;
-a source-level MCP improvement is staged for possible upstream but not verified.
+symbol silently invalidates everything built on top of it. The MCP's `runCell` already surfaces
+these in a `⚠ Kernel messages` section when it re-runs a cell — the job is to **read and act on
+them**, not judge success from the result line. And `getNotebookContext` returns a **cached
+snapshot** (it does not re-evaluate), so never read its outputs as a fresh result — confirm state
+by *evaluating* (`ValueQ`, `Head`, `FreeQ`). The
+[`wolfram-headless`](starter/.claude/skills/wolfram-headless/SKILL.md) skill encodes this so Claude
+does it by default. This was the most expensive Wolfbook trap we hit (hours lost), so it has its
+own write-up: [`docs/wolfbook-kernel-errors.md`](docs/wolfbook-kernel-errors.md). We checked the
+extension source: this is **not** a Wolfbook bug and there is nothing to patch — the fix is the
+discipline, which is why it lives in the skill rather than a code patch.
 
 **Optional: patch the splitter at the root.** The line-splitting above has a sharp
 edge — a `(* ... *)` comment placed right after an operator (e.g. `x :=(*note*)` with
@@ -2322,7 +2323,7 @@ in Part I.
 | [`docs/wolfbook-comment-split-fix.md`](docs/wolfbook-comment-split-fix.md) | Full explanation of the Wolfbook comment-split bug and the patch (with the manual one-line edit) |
 | [`scripts/apply-notebook-ux.py`](scripts/apply-notebook-ux.py) | Enable notebook word wrap (cells + output, incl. Wolfram results as wrapping text) + Mathematica-style section-folding keybindings across VS Code / Cursor / VSCodium / Windsurf (idempotent, backs up, `--revert`/`--dry-run`) |
 | [`docs/wolfbook-notebook-ux.md`](docs/wolfbook-notebook-ux.md) | Why notebook word wrap needs the cell-scoped `notebook.editorOptionsCustomizations` key, how built-in section folding works, and how to install both |
-| [`docs/wolfbook-kernel-errors.md`](docs/wolfbook-kernel-errors.md) | The Wolfbook MCP's stale cached-output trap and why a kernel message (undefined symbol, structure mismatch) is stop-and-fix — verify state by *evaluating*, not by reading a cell. Behavioral fix today (the `wolfram-headless` skill); no drop-in patch yet |
+| [`docs/wolfbook-kernel-errors.md`](docs/wolfbook-kernel-errors.md) | Why a kernel message (undefined symbol, structure mismatch) is stop-and-fix; `runCell` surfaces messages and returns fresh output (read them), while `getNotebookContext` is a cached snapshot (don't read as fresh) — verify by *evaluating*. Verified against the v2.7.14 source: a behavioral fix (the `wolfram-headless` skill), not a Wolfbook bug |
 
 ---
 

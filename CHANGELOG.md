@@ -35,13 +35,14 @@ pack, not a linked library, so there is no API to break — the version answers
   (`Set::shape`), a forward-reference to a symbol defined in a later cell — is a *stop-and-fix*
   signal, not benign noise; one undefined symbol silently invalidates everything downstream. The
   skill's new RULE 4 says to treat these as stop-and-fix, to **verify state by evaluating**
-  (`ValueQ`/`Head`/`FreeQ`) rather than reading displayed output (the Wolfbook MCP re-shows a cell's
-  *cached* output, which can be stale), and to run a sanity-sweep after multi-cell setup. The README
-  Wolfbook section gained a short note on the same discipline, and there is now a dedicated write-up,
-  [`docs/wolfbook-kernel-errors.md`](docs/wolfbook-kernel-errors.md) — this was the most expensive
-  Wolfbook trap we hit. Note: the fix today is *behavioral* (the skill); there is **no drop-in code
-  patch** for the MCP's stale-output behaviour yet, unlike the splitter fix. **Re-copy
-  `starter/.claude/skills/wolfram-headless/` to pick it up.**
+  (`ValueQ`/`Head`/`FreeQ`) rather than trusting displayed output: `runCell` surfaces messages in a
+  `⚠ Kernel messages` section (read them) and `getNotebookContext` is a cached snapshot (don't read
+  it as fresh) — so confirm by evaluating; and run a sanity-sweep after multi-cell setup. The README
+  Wolfbook section gained a short note on the same discipline, with a dedicated write-up,
+  [`docs/wolfbook-kernel-errors.md`](docs/wolfbook-kernel-errors.md) — the most expensive Wolfbook
+  trap we hit. We verified against the v2.7.14 extension source that this is **not** a Wolfbook bug
+  (`runCell` already returns fresh output and surfaces messages), so the fix is *behavioral* (the
+  skill), not a code patch. **Re-copy `starter/.claude/skills/wolfram-headless/` to pick it up.**
 
 ---
 

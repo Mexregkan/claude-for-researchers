@@ -1,64 +1,64 @@
 # Wolfbook MCP: kernel errors and stale cell output
 
 **Who needs this:** anyone driving a live Wolfram kernel through the Wolfbook MCP from Claude
-Code (running/editing `.wb`/`.nb` cells), as opposed to headless `wolframscript`. This is the
-single most expensive Wolfbook trap we have hit — it cost *hours* of misdiagnosis — so it is
-worth knowing even though the fix today is mostly a working discipline, not a one-line patch.
+Code. This is the single most expensive Wolfbook trap we have hit — hours lost to misdiagnosis —
+but it turned out to be about **how output is read and acted on**, *not* a bug in Wolfbook. We
+read the extension source (v2.7.14) to be sure; see "Is there a code patch?" at the end.
 
 ## The trap
 
-Two things combine to make a broken build look fine:
+A forward-reference makes a broken build look fine. In a working notebook, definitions and
+solutions are often placed *after* the cells that use them. A single top-to-bottom pass then runs
+a cell against an **undefined symbol**, and Wolfram does not stop — it emits a message and keeps
+going with a broken value:
 
-1. **The displayed cell output can be stale.** The MCP tools that show a cell (`runCell`,
-   `getNotebookContext`) re-display the cell's **last-rendered (cached) output**. So after you
-   re-run a cell, a *fresh* kernel error can sit hidden behind clean-looking old output, and a
-   *stale* error can persist on screen after you have already fixed the cause. Judging "did that
-   work?" by what the cell *shows* is therefore unreliable.
+- `ReplaceAll::reps` ("`X` is neither a list of replacement rules …") — `X` is undefined or the
+  wrong type; a stray `/.` then **poisons that symbol's value and propagates** to everything built
+  on it.
+- `Set::shape`, `Part::partd`, `Set::write` / `… is Protected`, any "`… is not defined`".
+- `Syntax::sntxi` ("Incomplete expression") on a cell you just ran.
 
-2. **A single kernel message invalidates everything downstream — and is easy to skim past.** In
-   a working notebook, definitions and solutions are often placed *after* the cells that use them
-   (a forward-reference). One top-to-bottom pass then runs a cell against an **undefined symbol**,
-   and Wolfram does not stop — it emits a message and keeps going with a broken value:
+A human running cells fixes this the instant they see the red message. The failure mode is
+**skimming past the message** as "a warning" and then debugging the *math* for hours when the real
+cause is an undefined symbol three cells up.
 
-   - `ReplaceAll::reps` ("`X` is neither a list of replacement rules …") — `X` is undefined or the
-     wrong type; a stray `/.` then **poisons that symbol's value and propagates** to everything
-     built on it.
-   - `Set::shape`, `Part::partd`, `Set::write` / `… is Protected`, any "`… is not defined`".
-   - `Syntax::sntxi` ("Incomplete expression") on a cell you just ran.
+## Two output sources — only one is "fresh"
 
-   A human running cells interactively fixes this the instant they see the red message. An
-   automated agent (or a tired human) skims past it as "a warning" and then spends hours
-   debugging the *math* when the real cause is an undefined symbol three cells up.
+The fix hinges on knowing which MCP tool gives a fresh result and which gives a snapshot:
 
-## What to do today (the mitigation that actually works)
+- **`runCell` re-executes and returns FRESH output.** In current Wolfbook (v2.7.x) it aborts any
+  running eval, re-runs the cell, waits for the kernel to go idle, then reads the *updated* output —
+  and it **surfaces kernel messages in a dedicated `⚠ Kernel messages (N):` section** (with a
+  special flag for `Syntax::`). So the messages are **not** hidden; the job is to **read that
+  section and act on it**, not to judge success from the result line alone.
+- **`getNotebookContext` returns a CACHED snapshot.** It reads each cell's *stored* output and does
+  **not** re-evaluate (correctly — it is a context-mapping tool, not an evaluator). Its outputs
+  reflect the last time each cell ran, which may be stale. **Never treat a `getNotebookContext`
+  output as a fresh result** — to know a cell's current value, re-run it (`runCell`) or evaluate.
 
-The reliable fix is a discipline, and the toolkit ships it so Claude follows it by default:
+## What to do (the discipline that actually fixes it)
 
-- **Treat those messages as STOP-and-fix, not noise.** When one appears, define/run the missing
-  symbol first, then re-run the dependent cells (a second pass) — or run the solution cells before
-  the build.
-- **Confirm state by EVALUATING, never by reading the cell display.** After a setup cell, evaluate
-  `ValueQ[sym]`, `Head[sym]`, or `FreeQ[sym, ReplaceAll]` — and pick a check that *survives*
-  evaluation (`FreeQ[_, ReplaceAll]`, `Head[x] === Plus`); a test like `FreeQ[_, foo]` is bogus if
-  `foo[]` evaluates away.
-- **Sanity-sweep after any multi-cell setup**, before trusting the build:
-  `Select[{<your key symbols>}, ! FreeQ[#, ReplaceAll] &]` must be `{}`, and
-  `ValueQ /@ {<your data lists>}` must be all `True`.
+The toolkit ships this so Claude follows it by default:
 
-This is encoded as a rule in the [`wolfram-headless`](../starter/.claude/skills/wolfram-headless/SKILL.md)
-skill ("read and act on kernel errors"), so if you install that skill, Claude applies it whether it
-runs Wolfram headless or through the MCP. You do not need to do anything beyond having the skill.
+- **Treat a kernel message as STOP-and-fix, not noise.** Read `runCell`'s `⚠ Kernel messages`
+  section. On an undefined symbol, define/run it first, then re-run the dependent cells (a 2nd pass).
+- **Confirm state by EVALUATING.** `ValueQ[sym]`, `Head[sym]`, `FreeQ[sym, ReplaceAll]` — pick a
+  check that *survives* evaluation (`FreeQ[_, ReplaceAll]`, `Head[x] === Plus`); `FreeQ[_, foo]` is
+  bogus if `foo[]` evaluates away.
+- **Sanity-sweep after multi-cell setup:** `Select[{<key symbols>}, ! FreeQ[#, ReplaceAll] &]` must
+  be `{}`, and `ValueQ /@ {<data lists>}` all `True`.
+
+This is the [`wolfram-headless`](../starter/.claude/skills/wolfram-headless/SKILL.md) skill's RULE 4
+— install the skill and Claude applies it whether it runs Wolfram headless or through the MCP.
 
 ## Is there a code patch (like the splitter fix)?
 
-**Not yet — and we will not pretend there is.** Unlike the comment-split bug, which has a verified
-one-line source fix you can apply with
-[`scripts/patch-wolfbook-splitter.py`](../scripts/patch-wolfbook-splitter.py) (see
-[`wolfbook-comment-split-fix.md`](wolfbook-comment-split-fix.md)), the stale-output / message-surfacing
-behaviour has **not** been pinned down in the Wolfbook source. A candidate improvement — have the MCP
-return the *fresh* evaluation result and surface kernel `Symbol::tag` messages in a dedicated field —
-is staged for a possible upstream contribution, but until it is verified there is no drop-in patch.
-So **for now the fix is behavioral** (the discipline above), not a code change.
-
-If you want to help: confirming whether `runCell` returns fresh vs cached output in the extension
-source (`out/extension/…`) is the missing piece that would turn the candidate into a real patch.
+**No — and we verified why.** We read the Wolfbook v2.7.14 source (`out/extension/tools/index.js`,
+`RunCellTool`; `GetNotebookContextTool`): `runCell` already (a) re-executes and reads fresh output,
+and (b) separates kernel messages into a `⚠ Kernel messages` section; `getNotebookContext` reads
+stored outputs *by design*. So there is **nothing to patch** in the MCP for this — unlike the
+comment-split bug, which has a real source fix
+([`scripts/patch-wolfbook-splitter.py`](../scripts/patch-wolfbook-splitter.py),
+[`wolfbook-comment-split-fix.md`](wolfbook-comment-split-fix.md)). Our lost hours were behavioral:
+not reading the messages `runCell` surfaced, and reading a `getNotebookContext` snapshot as if it
+were a fresh evaluation. The fix is the discipline above, not a code change.
