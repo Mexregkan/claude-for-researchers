@@ -89,27 +89,31 @@ def same_rank(g, *nodes):
 def chart_setup():
     g = make_graph('setup', 'Setting up a new research project\n\n\n', pad='0.55,0.9')
 
-    nd(g, 'start',  'New research project',                        S_TERM)
-    nd(g, 'dstart', 'Answer a few\nprompts?',                      S_DEC)
-    nd(g, 'boot',   'Run scripts/bootstrap.sh\n'
+    nd(g, 'start',  'New research project\n'
+                    'gather your files in the folder',             S_TERM)
+    nd(g, 'dstart', 'Paste one\nsetup prompt?',                    S_DEC)
+    nd(g, 'boot',   'Run scripts/bootstrap.sh (terminal)\n'
                     'asks: numerics? cite? dual remotes? Overleaf?\n'
                     'installs the core + only the matching skills', S_PROC)
-    nd(g, 'copy',   'Copy starter/ into your project\n'
-                    'the universal core + pick the skills you need\n'
-                    '(or paste the "bootstrap with Claude" prompt)', S_PROC)
-    nd(g, 'fill',   'Fill in real content\n'
-                    'CLAUDE.md: goal · files · conventions · status\n'
-                    'trinity: workbook.tex · brief.tex · next-session-prompts.md', S_PROC)
-    nd(g, 'end',    'Open Claude Code',                            S_TERM)
+    nd(g, 'open',   'Open Claude Code\n'
+                    'describe your project in the first message',  S_PROC)
+    nd(g, 'fill',   'Paste the prompt\n'
+                    'Claude writes CLAUDE.md + the trinity\n'
+                    '(workbook.tex · brief.tex · next-session-prompts.md)\n'
+                    'from your description',                        S_PROC)
+    nd(g, 'review', 'Review & fix the domain parts\n'
+                    'conventions · current status · introduction', S_PROC)
+    nd(g, 'end',    'Start your first task',                       S_TERM)
 
     ed(g, 'start',  'dstart', E_MAIN)
-    ed(g, 'dstart', 'boot',   E_YES,  lbl='yes')
-    ed(g, 'dstart', 'copy',   E_NO,   lbl='no')
-    ed(g, 'boot',   'fill',   E_MAIN)
-    ed(g, 'copy',   'fill',   E_MAIN)
-    ed(g, 'fill',   'end',    E_MAIN)
+    ed(g, 'dstart', 'open',   E_YES,  lbl='yes')
+    ed(g, 'dstart', 'boot',   E_NO,   lbl='no')
+    ed(g, 'boot',   'open',   E_MAIN)
+    ed(g, 'open',   'fill',   E_MAIN)
+    ed(g, 'fill',   'review', E_MAIN)
+    ed(g, 'review', 'end',    E_MAIN)
 
-    same_rank(g, 'boot', 'copy')
+    same_rank(g, 'dstart', 'boot')
     return g
 
 
