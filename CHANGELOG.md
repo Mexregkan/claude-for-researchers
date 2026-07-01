@@ -9,6 +9,41 @@ Versioning is calendar-based (`vYYYY.MM`): this is a guide and a copy-in starter
 pack, not a linked library, so there is no API to break — the version answers
 "how current is my copy?", nothing more.
 
+## v2026.07 — 2026-07-01 (update)
+
+### Added
+- **The pipeline workflow — give every big code a short living map Claude reads first.**
+  Some projects grow a large, hard-to-read code artifact (a many-cell notebook, a numerics
+  engine, a solver) that neither you nor Claude can hold in context. The pipeline workflow
+  gives each such code one short `Pipeline/` doc — what it computes, how the data flows, which
+  symbol lives where, the traps — that Claude reads *before* the source. It graduates a set of
+  tools proven on a real months-long project: three skills (`/write-pipeline` code→doc,
+  `/check-pipeline` drift detection that fixes the doc, `/apply-pipeline` the guarded write-side
+  that edits code from the doc), a read-only **`pipeline-auditor`** sub-agent (the first agent in
+  the starter — it reads doc + code together and hunts real bugs and optimizations, reports
+  never edits), and two shell helpers (`pipeline-guard.sh`, `pipeline-coverage.sh`). Full
+  rationale and setup: [`docs/pipeline-workflow.md`](docs/pipeline-workflow.md); a new README
+  section ("The pipeline workflow") introduces it.
+
+  **Adopt-at-trigger, not at-setup.** You can't know on day one whether a project will get big,
+  so nothing here asks you to predict that. The skills and agent are inert until you invoke them,
+  and `pipeline-guard` **self-quiets until a `Pipeline/` doc actually exists** — so the bootstrap
+  installs the whole workflow for *any* project with code, and it simply sits dormant until the
+  trigger: when a code becomes the file you dread opening, run `/write-pipeline` on it. It is not
+  worth the overhead for a 40-line script.
+
+### Action needed if you set up a project before this release
+- **Optional — only if you have (or grow) a large, hard-to-read code.** To get the workflow,
+  copy `starter/.claude/skills/{write,check,apply}-pipeline/`,
+  `starter/.claude/agents/pipeline-auditor.md`,
+  `starter/.claude/hooks/pipeline-{guard,coverage}.sh`, and `starter/Pipeline/README.md` into
+  your project, and add the "Pipeline workflow" section from `starter/CLAUDE.md` to your own
+  `CLAUDE.md`. To get the edit-time nudge, enable the `pipeline-guard` PostToolUse block
+  documented in `starter/.claude/settings.json` (it stays silent until your first pipeline doc
+  exists, so enabling it early is harmless). Nothing breaks if you skip all of this.
+
+---
+
 ## v2026.06 — 2026-06-30 (update)
 
 ### Added

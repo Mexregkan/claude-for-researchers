@@ -141,6 +141,26 @@ esac
 if [ "$NUMERICS" != "none" ]; then
     mkdir -p numerics/generated figures/generated
     say "  ok   numerics/generated/ and figures/generated/ (AI-output staging — see CLAUDE.md)"
+
+    # Pipeline workflow: install for any project with code. The skills + agent are
+    # inert until you invoke them, and the guard hook self-quiets until a Pipeline/
+    # doc exists — so there is nothing to predict at setup. You ADOPT the workflow
+    # later, when a code grows too big to hold in context (run /write-pipeline on it).
+    say ""
+    say "Pipeline workflow (dormant until you have a big code to document):"
+    skill write-pipeline dump_code.py
+    skill check-pipeline
+    skill apply-pipeline
+    mkdir -p .claude/agents
+    core starter/.claude/agents/pipeline-auditor.md .claude/agents/pipeline-auditor.md
+    core starter/.claude/hooks/pipeline-guard.sh    .claude/hooks/pipeline-guard.sh
+    core starter/.claude/hooks/pipeline-coverage.sh .claude/hooks/pipeline-coverage.sh
+    chmod +x .claude/hooks/pipeline-*.sh 2>/dev/null
+    mkdir -p Pipeline
+    core starter/Pipeline/README.md Pipeline/README.md
+    say "  -> when a code gets too big to read top-to-bottom, run /write-pipeline on it."
+    say "     to get the auto-nudge on edits, enable pipeline-guard in .claude/settings.json"
+    say "     (the exact block is documented there; it stays silent until a Pipeline/ doc exists)."
 fi
 
 if [ "$DUALREMOTE" -eq 1 ]; then

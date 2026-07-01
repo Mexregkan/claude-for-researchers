@@ -93,6 +93,9 @@ script. Never include `generated/` content in workbook.tex without my explicit i
 - `/cross-validate` — format a physics claim for cross-model validation.
 - `/overleaf-sync` — sync the `Overleaf/` git clone of a shared paper: status/pull/diff/publish.
   Only if you collaborate on Overleaf via its git remote. Remove this line otherwise.
+- `/write-pipeline`, `/check-pipeline`, `/apply-pipeline` — the Pipeline workflow (see the
+  "Pipeline workflow" section below). Only once a code grows too big to hold in context; remove
+  these lines if this project has no such codes.
 
 ## Writing style in workbook.tex (IMPORTANT)
 <!-- Tell Claude how detailed to be when writing in workbook.tex.
@@ -133,6 +136,29 @@ work from incorrect information, confidently.
 - Primary engine: Python + mpmath (precision: `mp.dps = 30` unless stated otherwise)
 - venv: `numerics/venv/` — run scripts as `numerics/venv/bin/python numerics/script.py`
 - Route all long-running output to `numerics/run.log`
+
+## Pipeline workflow
+<!-- KEEP this section only if the project has (or will grow) large, hard-to-read codes.
+     Delete the whole section, the /*-pipeline skill lines above, and the Pipeline/ folder
+     if every code here is small enough to read top-to-bottom. -->
+
+Big codes get a **map**. When any code grows too big to hold in context — the file you
+dread opening (a many-cell notebook, a multi-pass engine) — it gets one short living doc
+under `Pipeline/` that Claude reads *before* the source. Three standing invariants:
+
+1. **Every main code has a pipeline doc.** Cross that "too big to read" threshold →
+   `/write-pipeline <file>`. (Coverage: `bash .claude/hooks/pipeline-coverage.sh`.)
+2. **An agent keeps each pipeline healthy.** Before relying on a code, after a big change,
+   and periodically, spawn the read-only `pipeline-auditor` on its doc — it reads doc +
+   code and hunts real bugs and concrete optimizations (it reports, never edits).
+3. **Code and pipeline move together.** Edit code → `/check-pipeline` and fix the *doc*
+   (the code is ground truth). Edit a doc → `/apply-pipeline` reconciles the *code* (with
+   approval + a control re-run). The optional `pipeline-guard` hook nudges the right
+   direction on each file edit; it stays silent until a `Pipeline/` doc exists.
+
+**Always read `Pipeline/README.md` before opening any large code.** A hook cannot see
+notebook edits made through a live-kernel MCP — this written rule covers those. Full
+rationale + setup: `docs/pipeline-workflow.md` in the claude-for-researchers toolkit.
 
 ## Git
 <!-- Remote setup, identity, push procedure. -->

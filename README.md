@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.06** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.07** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`.
 
@@ -2000,6 +2000,29 @@ difference is significant.
 
 ---
 
+## The pipeline workflow: keep Claude fluent in your own code
+
+Some projects grow a few large, gnarly code artifacts — a many-hundred-cell notebook, a
+numerics engine, a solver — that neither you nor Claude can hold in context or read
+top-to-bottom. Opening one burns context and still misses the structure, and every session
+re-explains the same data flow. The fix is a **map**: one short living document per big code
+(a `Pipeline/` `.md`) that says what it computes, how the data flows stage by stage, which
+symbol lives where, and the non-obvious traps — Claude reads the map *before* the source and
+arrives oriented.
+
+You don't decide this at setup — you can't know on day one whether a project will get big. You
+**adopt it at the trigger**: when a code becomes the file you dread opening, run
+`/write-pipeline` on it. From then on three skills and an agent keep the map and the code
+honest with each other — `/check-pipeline` (drift detection, fixes the doc), `/apply-pipeline`
+(the guarded write-side that edits code from the doc), and a read-only `pipeline-auditor`
+sub-agent that reads doc + code together and hunts real bugs and optimizations. An optional
+`pipeline-guard` hook nudges the right direction on each edit and stays silent until your first
+pipeline doc exists. The bootstrap installs all of this for any project with code (it's inert
+until you use it); it is **not** worth the overhead for a 40-line script. Full rationale, the
+doc format, and setup are in **[`docs/pipeline-workflow.md`](docs/pipeline-workflow.md)**.
+
+---
+
 ## distill: filtering noisy research-command output
 
 `rtk` (above) trims the dev commands Claude runs constantly. **distill** is its
@@ -2273,11 +2296,17 @@ starter/
 │   └── settings.json               ← word wrap for notebook cells only (not your .tex/.py files)
 ├── scripts/
 │   └── git-push-both.sh             ← (opt-in) dual-remote push; enable via the PostToolUse hook
+├── Pipeline/                        ← (pipeline workflow — optional) one map per big code; read README.md first
+│   └── README.md                   ← index of the codes and their pipeline docs
 └── .claude/
-    ├── settings.json                ← permissions (allow routine · ask before dangerous) + hooks (mirror hook OFF by default)
+    ├── settings.json                ← permissions (allow routine · ask before dangerous) + hooks (mirror + pipeline-guard OFF by default)
     ├── hooks/
     │   ├── pre-compact.sh           ← auto-save before context compression
-    │   └── promise-checker.sh       ← Stop hook: catches "I'll remember" without a write
+    │   ├── promise-checker.sh       ← Stop hook: catches "I'll remember" without a write
+    │   ├── pipeline-guard.sh        ← (pipeline workflow — optional) PostToolUse nudge; self-quiets until a Pipeline/ doc exists
+    │   └── pipeline-coverage.sh     ← (pipeline workflow — optional) on-demand coverage check
+    ├── agents/
+    │   └── pipeline-auditor.md      ← (pipeline workflow — optional) read-only bug/optimization auditor sub-agent
     └── skills/
         ├── latex-compile/SKILL.md   ← /latex-compile skill
         ├── sync-brief/SKILL.md      ← /sync-brief skill
@@ -2288,7 +2317,10 @@ starter/
         ├── verify-citation/SKILL.md ← /verify-citation skill
         ├── reality-check/SKILL.md   ← /reality-check skill
         ├── cross-validate/SKILL.md  ← /cross-validate skill
-        └── overleaf-sync/SKILL.md   ← /overleaf-sync skill
+        ├── overleaf-sync/SKILL.md   ← /overleaf-sync skill
+        ├── write-pipeline/          ← (pipeline workflow — optional) /write-pipeline skill (SKILL.md + dump_code.py)
+        ├── check-pipeline/SKILL.md  ← (pipeline workflow — optional) /check-pipeline skill
+        └── apply-pipeline/SKILL.md  ← (pipeline workflow — optional) /apply-pipeline skill
 ```
 
 Copy the files, fill in `CLAUDE.md` with your project's details, and you are ready
@@ -2319,6 +2351,13 @@ in Part I.
 | [`starter/.claude/skills/reality-check/SKILL.md`](starter/.claude/skills/reality-check/SKILL.md) | Skill: re-derive a contested result in isolation to detect sycophantic capitulation |
 | [`starter/.claude/skills/cross-validate/SKILL.md`](starter/.claude/skills/cross-validate/SKILL.md) | Skill: format a physics claim for cross-model validation against Gemini or ChatGPT |
 | [`starter/.claude/skills/overleaf-sync/SKILL.md`](starter/.claude/skills/overleaf-sync/SKILL.md) | Skill: sync a git clone of a shared Overleaf project — status/pull/diff, and a safe merge-only publish |
+| [`starter/.claude/skills/write-pipeline/SKILL.md`](starter/.claude/skills/write-pipeline/SKILL.md) | Skill (pipeline workflow): write/refresh a `Pipeline/` doc mapping a big code's data flow, key symbols, and gotchas so Claude reads the map before the source. Ships `dump_code.py` (renders a `.wb`/`.ipynb` notebook to a readable outline + full dump) |
+| [`starter/.claude/skills/check-pipeline/SKILL.md`](starter/.claude/skills/check-pipeline/SKILL.md) | Skill (pipeline workflow): drift check — verify every symbol, cell number, data file, and I/O claim in a pipeline doc still matches the code; classify BROKEN vs STALE; fix the *doc* (code is ground truth) on approval |
+| [`starter/.claude/skills/apply-pipeline/SKILL.md`](starter/.claude/skills/apply-pipeline/SKILL.md) | Skill (pipeline workflow): the write-side inverse — apply an optimization the doc names or fix code the doc (backed by your notes) shows is wrong, guardrailed with a diff preview, ground-truth protection, and a control re-run |
+| [`starter/.claude/agents/pipeline-auditor.md`](starter/.claude/agents/pipeline-auditor.md) | Sub-agent (pipeline workflow): read-only auditor that reads a pipeline doc + its code together and hunts real bugs and concrete optimizations, ranked by what it verified — it reports, never edits |
+| [`starter/.claude/hooks/pipeline-guard.sh`](starter/.claude/hooks/pipeline-guard.sh) | PostToolUse hook (pipeline workflow, opt-in): after a code edit nudges `/check-pipeline` (+ an auditor pass); after a pipeline-doc edit nudges `/apply-pipeline`. Nudge-only; self-quiets until a `Pipeline/` doc exists |
+| [`starter/.claude/hooks/pipeline-coverage.sh`](starter/.claude/hooks/pipeline-coverage.sh) | On-demand check (pipeline workflow): flags any main code without a pipeline doc and any orphan doc; quiet ("no pipeline docs yet") until you adopt the workflow |
+| [`starter/Pipeline/README.md`](starter/Pipeline/README.md) | Index stub for the `Pipeline/` folder: the codes-and-docs table plus the house rules every pipeline file follows — the file Claude reads before opening any large code |
 | [`starter/.claude/hooks/promise-checker.sh`](starter/.claude/hooks/promise-checker.sh) | Stop hook: catches "I'll remember / I've saved" without a corresponding file write |
 | [`docs/condensed-notes-guide.md`](docs/condensed-notes-guide.md) | Detailed guide on what to include in and exclude from brief.tex |
 | [`scripts/git-push-both.sh`](scripts/git-push-both.sh) | Dual-remote push: push to GitHub (personal) and GitLab (institution) with separate identities |
@@ -2328,6 +2367,7 @@ in Part I.
 | [`scripts/apply-notebook-ux.py`](scripts/apply-notebook-ux.py) | Enable notebook word wrap (cells + output, incl. Wolfram results as wrapping text) + Mathematica-style section-folding keybindings across VS Code / Cursor / VSCodium / Windsurf (idempotent, backs up, `--revert`/`--dry-run`) |
 | [`docs/wolfbook-notebook-ux.md`](docs/wolfbook-notebook-ux.md) | Why notebook word wrap needs the cell-scoped `notebook.editorOptionsCustomizations` key, how built-in section folding works, and how to install both |
 | [`docs/wolfbook-kernel-errors.md`](docs/wolfbook-kernel-errors.md) | Why a kernel message (undefined symbol, structure mismatch) is stop-and-fix; `runCell` surfaces messages and returns fresh output (read them), while `getNotebookContext` is a cached snapshot (don't read as fresh) — verify by *evaluating*. Verified against the v2.7.14 source: a behavioral fix (the `wolfram-headless` skill), not a Wolfbook bug |
+| [`docs/pipeline-workflow.md`](docs/pipeline-workflow.md) | The pipeline workflow: give every big code a short living "pipeline" doc Claude reads first, keep code and doc in lockstep, and audit both. The four tools (`write-`/`check-`/`apply-pipeline` skills + a read-only `pipeline-auditor` sub-agent) + a PostToolUse guard hook, the three invariants, the lifecycle, and how to set it up in your own project |
 
 ---
 
