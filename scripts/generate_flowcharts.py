@@ -89,37 +89,27 @@ def same_rank(g, *nodes):
 def chart_setup():
     g = make_graph('setup', 'Setting up a new research project\n\n\n', pad='0.55,0.9')
 
-    nd(g, 'start',  'New research project', S_TERM)
-    nd(g, 'cla',    'Write CLAUDE.md\n'
-                    'goal · file map · conventions · git config\n'
-                    'current status · open tasks · skills list',  S_PROC)
-    nd(g, 'cond',   'Write brief.tex (short reference)\n'
-                    'established results only · no proofs\n'
-                    '15–30 pages · read first every session',      S_PROC)
-    nd(g, 'nsp',    'Write next-session-prompts.md\n'
-                    'first task at top · DONE log at bottom',      S_PROC)
-    nd(g, 'sett',   'Configure .claude/settings.json\n'
-                    'allow routine · ask before anything dangerous\n'
-                    'add pre-compact hook · test in terminal first', S_PROC)
-    nd(g, 'ddual',  'Dual\nremotes?',                              S_DEC)
-    nd(g, 'dual',   'Add GitHub + GitLab remotes\n'
-                    'configure git-push-both.sh',                  S_PROC)
-    nd(g, 'skills', 'Write .claude/skills/\n'
-                    'one .md file per repeatable procedure\n'
-                    'list each skill in CLAUDE.md',                S_PROC)
+    nd(g, 'start',  'New research project',                        S_TERM)
+    nd(g, 'dstart', 'Answer a few\nprompts?',                      S_DEC)
+    nd(g, 'boot',   'Run scripts/bootstrap.sh\n'
+                    'asks: numerics? cite? dual remotes? Overleaf?\n'
+                    'installs the core + only the matching skills', S_PROC)
+    nd(g, 'copy',   'Copy starter/ into your project\n'
+                    'the universal core + pick the skills you need\n'
+                    '(or paste the "bootstrap with Claude" prompt)', S_PROC)
+    nd(g, 'fill',   'Fill in real content\n'
+                    'CLAUDE.md: goal · files · conventions · status\n'
+                    'trinity: workbook.tex · brief.tex · next-session-prompts.md', S_PROC)
     nd(g, 'end',    'Open Claude Code',                            S_TERM)
 
-    ed(g, 'start',  'cla',    E_MAIN)
-    ed(g, 'cla',    'cond',   E_MAIN)
-    ed(g, 'cond',   'nsp',    E_MAIN)
-    ed(g, 'nsp',    'sett',   E_MAIN)
-    ed(g, 'sett',   'ddual',  E_MAIN)
-    ed(g, 'ddual',  'dual',   E_YES,  lbl='yes')
-    ed(g, 'ddual',  'skills', E_NO,   lbl='no')
-    ed(g, 'dual',   'skills', E_MAIN)
-    ed(g, 'skills', 'end',    E_MAIN)
+    ed(g, 'start',  'dstart', E_MAIN)
+    ed(g, 'dstart', 'boot',   E_YES,  lbl='yes')
+    ed(g, 'dstart', 'copy',   E_NO,   lbl='no')
+    ed(g, 'boot',   'fill',   E_MAIN)
+    ed(g, 'copy',   'fill',   E_MAIN)
+    ed(g, 'fill',   'end',    E_MAIN)
 
-    same_rank(g, 'ddual', 'dual')
+    same_rank(g, 'boot', 'copy')
     return g
 
 
