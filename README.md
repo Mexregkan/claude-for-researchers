@@ -777,6 +777,24 @@ document closest to an eventual published paper.
 `brief.tex` acts as a compressed session memory. When `workbook.tex` has grown
 beyond what fits in context, Claude reads `brief.tex` and stays accurately oriented.
 
+### Collaborative projects: naming workbooks by author
+
+For collaborative projects with multiple contributors, consider naming each person's
+workbook by their name (e.g., `workbookAlice.tex`, `workbookBob.tex`) instead of a
+shared `workbook.tex`. Benefits:
+
+- **Ownership clarity**: Each proof and derivation is explicitly attributed without
+  needing `git blame`. When Claude sees `workbookAlice.tex` has a new theorem, it knows
+  Alice worked on that section.
+- **Fewer merge conflicts**: Each person has their own file. Parallel work on separate
+  results does not require merging textual changes.
+- **Natural aggregation**: Everyone pulls from their personal workbook into a shared
+  `brief.tex`, which becomes the canonical record of established results. The brief
+  is where you reconcile and publish consolidated findings.
+
+Each author maintains their own comprehensive workbook; `brief.tex` serves as the
+project's integrated reference.
+
 ### What to put in workbook.tex
 
 Everything. `workbook.tex` is the authoritative record, and "authoritative"

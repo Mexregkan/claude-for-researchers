@@ -25,6 +25,9 @@ domain as a function of their spectral parameters, using the Rankin–Selberg un
 - **workbook.tex** — full working record (~N pp): every proof, derivation, failed attempt,
   and discussion in complete detail. Not a paper draft — a research journal in LaTeX.
   Too large to read in full — grep or search by section label.
+  *For collaborative projects: consider naming each author's workbook separately
+  (e.g., workbookAlice.tex, workbookBob.tex) to clarify ownership and reduce merge conflicts.
+  Everyone pulls results into the shared brief.tex.*
 - **next-session-prompts.md** — task log. Top section = next task; bottom = DONE log.
 - **numerics/** — computation scripts. `README.md` inside explains each file.
 
