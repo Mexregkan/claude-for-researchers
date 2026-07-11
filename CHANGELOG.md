@@ -5,11 +5,15 @@ updates worth knowing about — not every commit (see the git history for that).
 Useful for deciding whether to re-copy anything from `starter/` into a project
 you set up from an earlier version.
 
-Versioning is calendar-based (`vYYYY.MM`): this is a guide and a copy-in starter
-pack, not a linked library, so there is no API to break — the version answers
-"how current is my copy?", nothing more.
+Versioning is primarily calendar-based (`vYYYY.MM`): this is a guide and a copy-in
+starter pack, not a linked library, so there is no API to break — the calendar tag
+answers "how current is my copy?". Alongside it each release also carries a semantic
+version (`MAJOR.MINOR.PATCH`): **PATCH** for a fix or clarification, **MINOR** for a new
+skill/tool/guide section, **MAJOR** only if an update would break an existing setup (force
+a re-copy to keep working). So the SemVer answers the other question — "how much changed,
+and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
-## v2026.07 — 2026-07-11 (update)
+## v2026.07 · v1.6.0 — 2026-07-11 (update)
 
 ### Added
 - **Scaling the workflow to large, multi-branch projects.** A flat `CLAUDE.md` plus one
@@ -52,7 +56,7 @@ pack, not a linked library, so there is no API to break — the version answers
 
 ---
 
-## v2026.07 — 2026-07-01 (update)
+## v2026.07 · v1.5.0 — 2026-07-01 (update)
 
 ### Added
 - **The pipeline workflow — give every big code a short living map Claude reads first.**
@@ -87,7 +91,7 @@ pack, not a linked library, so there is no API to break — the version answers
 
 ---
 
-## v2026.06 — 2026-06-30 (update)
+## v2026.06 · v1.4.0 — 2026-06-30 (update)
 
 ### Added
 - **`wolfbook` skill — a playbook for driving the live Wolfram kernel via the Wolfbook MCP.**
@@ -102,7 +106,7 @@ pack, not a linked library, so there is no API to break — the version answers
 
 ---
 
-## v2026.06 — 2026-06-29 (update)
+## v2026.06 · v1.3.0 — 2026-06-29 (update)
 
 ### Added
 - **distill — a token filter for research command output (now referenced in the guide).**
@@ -139,7 +143,7 @@ pack, not a linked library, so there is no API to break — the version answers
 
 ---
 
-## v2026.06 — 2026-06-22 (update)
+## v2026.06 · v1.2.0 — 2026-06-22 (update)
 
 ### Added
 - **Guide: "Group projects — shared vs personal configuration."** A new README section for
@@ -194,7 +198,7 @@ pack, not a linked library, so there is no API to break — the version answers
 
 ---
 
-## v2026.06 — 2026-06-20 (update)
+## v2026.06 · v1.1.0 — 2026-06-20 (update)
 
 ### Added
 - **Notebook word wrap + Mathematica-style section folding for VS Code.** Two quality-of-life
@@ -223,7 +227,7 @@ pack, not a linked library, so there is no API to break — the version answers
 
 ---
 
-## v2026.06 — 2026-06-18 (update)
+## v2026.06 · v1.0.1 — 2026-06-18 (update)
 
 ### Fixed
 - **`verify-citation`, `reality-check`, `cross-validate` were missing their YAML frontmatter.**
@@ -238,7 +242,7 @@ pack, not a linked library, so there is no API to break — the version answers
 
 ---
 
-## v2026.06 — 2026-06-13
+## v2026.06 · v1.0.0 — 2026-06-13
 
 First tagged release of the current structure. Everything below landed this month.
 
