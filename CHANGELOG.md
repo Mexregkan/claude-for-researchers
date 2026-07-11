@@ -9,6 +9,49 @@ Versioning is calendar-based (`vYYYY.MM`): this is a guide and a copy-in starter
 pack, not a linked library, so there is no API to break — the version answers
 "how current is my copy?", nothing more.
 
+## v2026.07 — 2026-07-11 (update)
+
+### Added
+- **Scaling the workflow to large, multi-branch projects.** A flat `CLAUDE.md` plus one
+  workbook is the right starter, but it stops scaling once a project grows several
+  sub-projects deep. A batch of new (additive) guidance covers the structures that let it
+  keep scaling without bloating the always-loaded context:
+  - **Nested (per-directory) `CLAUDE.md` files** — pushed down next to the branch they
+    describe, loaded on demand (Part II, "CLAUDE.md").
+  - **Status vs. changelog split** — keep `CLAUDE.md`'s status a lean per-branch *snapshot*;
+    move the dated log elsewhere ("if a line has a date, it's a changelog").
+  - **Built-in memory** — one-fact-per-file, typed (`user`/`feedback`/`project`/`reference`),
+    indexed by `MEMORY.md`; what to keep re-teaching Claude vs. what belongs in `CLAUDE.md`.
+  - **Strategy maps** — the research *route plan* (named, ordered strategies + falsified
+    detours + an honesty ledger), distinct from the immediate task queue.
+  - **A three-tier overview → brief → workbook stack** — a short, equation-light
+    `bigPicture.tex` read *first*, with a proven/open status ledger.
+  - **Crash-course appendices** that make the workbook self-teaching.
+  - **The per-branch kit** — each active branch gets its own CLAUDE.md + queue + strategy
+    map + overview (Part III, "Group projects").
+  - **A trust ledger** (make epistemic status explicit) and a **trap log** (the tool
+    failures that produce wrong answers, not errors) — both in Part IV.
+  - **Consistency invariants** — a structural cross-check stronger than re-running (Numerics).
+  - **KaTeX-safe previews** and **convention hygiene** to stop `CLAUDE.md` drift.
+- **Two new optional starter templates:** [`starter/bigPicture.tex`](starter/bigPicture.tex)
+  (the overview document, with ready-made proven/open ledger boxes) and
+  [`starter/strategy-map.md`](starter/strategy-map.md) (the route-plan template). Both are for
+  *big* projects and are not installed by the bootstrap — copy them when a project reaches that
+  scale.
+
+### Clarified
+- **"Strategy map" vs. "pipeline workflow."** These are different tools and the guide now says
+  so explicitly: a **strategy map** plans the *research* (proofs, analysis, write-ups); a
+  **pipeline** doc (Part III) maps a large *code*. A big project may want both.
+
+### Action needed if you set up a project before this release
+- **Nothing required — it is all additive and optional.** For a large, multi-branch project,
+  copy [`starter/bigPicture.tex`](starter/bigPicture.tex) and
+  [`starter/strategy-map.md`](starter/strategy-map.md) when you reach that scale; the rest is
+  guidance you can adopt piecemeal. Nothing breaks if you skip all of it.
+
+---
+
 ## v2026.07 — 2026-07-01 (update)
 
 ### Added

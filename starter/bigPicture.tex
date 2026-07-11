@@ -1,0 +1,134 @@
+% bigPicture.tex — the overview document (read BEFORE the workbook)
+%
+% USAGE BY CLAUDE:
+%   - READ THIS FIRST, before brief.tex and workbook.tex, at the start of a
+%     session on a large project. It is the five-minute on-ramp: the goal, the
+%     one organising idea, what follows from it, and an honest status ledger.
+%   - It is equation-LIGHT on purpose. No derivations live here. Every claim
+%     points to workbook.tex \S (section) or eq. for the details.
+%   - The three-tier reading order for a big project is:
+%         bigPicture.tex   (this file — the shape, in 5 minutes)
+%       → brief.tex        (the current results, stated cleanly)
+%       → workbook.tex     (the full derivations, navigated by grep)
+%
+% KEEPING IT HONEST:
+%   - When a major result lands, update the status ledger below IN THE SAME
+%     COMMIT as the workbook change. A stale ledger is worse than none.
+%   - Quote workbook.tex's REAL section titles in the pointers. A plausible-but-
+%     invented section name is worse than no pointer (a common failure when a
+%     weaker model drafts the overview — check the pointer resolves).
+%   - Do not overstate status. If Layer 1 proves only property P, say "P", not
+%     "the full theorem". The ledger's whole job is to stop that inflation.
+%
+\documentclass[11pt, a4paper]{article}
+
+\usepackage{amsmath, amssymb}
+\usepackage{mathtools}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[framemethod=default]{mdframed}
+
+% -----------------------------------------------------------------------
+% STATUS-LEDGER BOXES
+% green  = proven (theorem / machine-checked)
+% orange = open / numerically known but not proven
+% Change the frame titles freely; keep the two colours distinct so status is
+% readable at a glance.
+% -----------------------------------------------------------------------
+\newmdenv[
+  linecolor={green!45!black}, backgroundcolor={green!6},
+  linewidth=0.8pt, roundcorner=3pt,
+  frametitle={\bfseries\color{green!45!black} Proven (theorems, machine-checked)},
+  frametitlerule=true, frametitlerulecolor={green!45!black},
+  frametitlebackgroundcolor={green!12},
+  skipabove=10pt, skipbelow=10pt
+]{provenbox}
+
+\newmdenv[
+  linecolor={orange!70!black}, backgroundcolor={orange!6},
+  linewidth=0.8pt, roundcorner=3pt,
+  frametitle={\bfseries\color{orange!70!black} Open / numerically known (not yet proven)},
+  frametitlerule=true, frametitlerulecolor={orange!70!black},
+  frametitlebackgroundcolor={orange!12},
+  skipabove=10pt, skipbelow=10pt
+]{openbox}
+
+% -----------------------------------------------------------------------
+\title{[Project Title] — Big Picture\\
+{\normalsize\textit{The shape of the project in five minutes — read before the workbook}}}
+\author{[Author Name]}
+\date{\today}
+% -----------------------------------------------------------------------
+
+\begin{document}
+\maketitle
+
+% -----------------------------------------------------------------------
+\section*{What we are trying to do}
+% -----------------------------------------------------------------------
+% One paragraph, plain language. The goal / the open question. No jargon that
+% is not defined in the workbook's crash-course appendices.
+
+[State the goal in one paragraph: what object, what question, what would count
+as success. Write it so a colleague in a neighbouring field understands the aim
+without reading anything else.]
+
+% -----------------------------------------------------------------------
+\section*{The one organising idea}
+% -----------------------------------------------------------------------
+% The single structure the whole project hangs on. If a reader remembers only
+% one thing, this is it.
+
+[Name the central structure / method / decomposition that everything else is
+built on. One or two paragraphs. Point to where it is set up: workbook.tex
+\S``[real section title]''.]
+
+% -----------------------------------------------------------------------
+\section*{What follows from it}
+% -----------------------------------------------------------------------
+% The consequences, as a short narrative — how the pieces connect toward the
+% goal. Still equation-light; each step names its workbook location.
+
+[Sketch the route from the organising idea to the goal. Two or three short
+paragraphs. For each claimed step, cite workbook.tex \S/eq. rather than
+reproducing it here.]
+
+% -----------------------------------------------------------------------
+\section*{Where we stand — status ledger}
+% -----------------------------------------------------------------------
+% The single glanceable source of "where are we". Keep it in sync with the
+% workbook. Every line names its real workbook location.
+
+\begin{provenbox}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+  \item [Result that is fully proven] \quad(workbook.tex \S``[real section title]'').
+  \item [Another proven result] \quad(workbook.tex \S``[...]'').
+\end{itemize}
+\end{provenbox}
+
+\begin{openbox}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+  \item [Result verified numerically to N digits — structure clear, value not yet
+        analytic] \quad(workbook.tex \S``[...]'').
+  \item [What is still missing for full rigour, stated precisely] \quad(needs [X]).
+\end{itemize}
+\end{openbox}
+
+% -----------------------------------------------------------------------
+\section*{Where the details live}
+% -----------------------------------------------------------------------
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{Current results, stated cleanly:} \texttt{brief.tex}.
+  \item \textbf{Full derivations and failed attempts:} \texttt{workbook.tex}
+        (navigate by \texttt{grep}/section label; do not read top to bottom).
+  \item \textbf{Definitions of the machinery / jargon:} the crash-course
+        appendices in \texttt{workbook.tex}.
+\end{itemize}
+
+\end{document}

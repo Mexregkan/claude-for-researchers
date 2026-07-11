@@ -737,6 +737,117 @@ sessions.
 
 ---
 
+### When one CLAUDE.md isn't enough: nested files
+
+A single `CLAUDE.md` at the project root is right for almost every project. But
+once a project grows several sub-projects deep — each with its own conventions,
+its own equations, its own "don't work on this here" rules — putting all of that
+in the root file makes it long, and you pay for every line in *every* session,
+even when you are working somewhere those rules do not apply.
+
+Claude Code loads memory **hierarchically**. The root `CLAUDE.md` loads at the
+start of every session. A `CLAUDE.md` placed *inside* a sub-directory is pulled
+in **on demand** — only when Claude actually reads or edits files in that subtree.
+So you can push branch-specific context down next to the branch it describes, and
+it enters the context window only when it is relevant.
+
+The two compose rather than clash: root = the whole-project base; nested = an
+additive refinement scoped to one branch. Open the nested file by stating that
+relationship explicitly, so the two never look contradictory:
+
+```markdown
+# <Branch> — local context for Claude
+
+Branch-specific notes. The project-root CLAUDE.md (N folders up) still applies;
+this file only adds what is special about this branch.
+
+## What this branch is
+...
+## Where files go (mirror of the root file layout)
+...
+## Flags and gotchas special to this branch
+...
+```
+
+If two levels ever genuinely conflict, the more specific (deeper) file governs
+its own subtree. Run `/memory` at any time to see exactly which `CLAUDE.md` files
+are currently loaded. The payoff is token economy: a branch's own sign
+convention, its branch-only citations, or a local file-placement rule stays out
+of context during unrelated work and appears exactly when you touch that branch.
+
+---
+
+### Status vs. changelog: keep the always-loaded file lean
+
+`CLAUDE.md` is re-read at the start of every session, so every line in it is a
+recurring cost — and on a long project the "Current status" section is where
+bloat creeps in. Each finished result is tempting to leave in place as a paragraph
+with its scripts, its data files, its little proof sketch. Do that for a few
+months and the status section becomes a dated log of everything you have ever
+done: dozens of screenfuls that bury the actual instructions and cost tokens
+every session.
+
+That dated log is worth keeping — but it is a **changelog**, not a status.
+Split them:
+
+- **`CLAUDE.md` → "Current status"** is a *snapshot*: for each branch, the
+  headline DONE results and the current OPEN frontier. A handful of lines per
+  branch, no dates.
+- **The dated log** — the full "what landed when, with which script and which
+  data file" — lives in the durable history file: the DONE log in
+  `next-session-prompts.md` for most projects, or a dedicated `CHANGELOG.md` at
+  the project root once that history gets long.
+
+Rule of thumb: **if a status line has a date in it, it belongs in the dated log,
+not in `CLAUDE.md`.** Condensing a status section that has grown to dozens of
+paragraphs down to a per-branch snapshot can cut the always-loaded status content
+by an order of magnitude while losing nothing — the detail just moves to where it
+is read on demand instead of every session.
+
+A snapshot template for a multi-branch project:
+
+```markdown
+## Current status
+
+> Full dated log lives in the DONE log / CHANGELOG.md. Below is a snapshot of
+> where each branch stands. When a result lands, append to the dated log; when a
+> branch's DONE/OPEN frontier moves, refresh this snapshot.
+
+**<Branch A>**
+- DONE: <headline results, terse>
+- OPEN: <the current frontier / what is next>
+```
+
+---
+
+### Convention hygiene: pin decisions so they don't drift
+
+Some decisions are easy to make once and then silently violate: a file rename, a
+citation key, how a collaborator's name is spelled, which repo a file belongs in.
+When the decision and the files drift apart you get dead cross-references, links
+that break in a preview, and — worst for Claude — confident pointers at files that
+no longer exist.
+
+The fix is cheap: keep a short **conventions** block in `CLAUDE.md`, and
+*maintain* it the moment a decision changes. Record the things that are easy to
+get wrong as one-line rules:
+
+- **File renames.** If `workbook.tex` becomes `workbookAlice.tex`, say so — and
+  fix every stale reference in the same edit, or the old name lingers in prose
+  and Claude follows it.
+- **Citation keys.** "The cite key stays `Author:2021abc` even though we write the
+  name out in full in prose."
+- **Naming.** "The collaborator's name is spelled *X*, not *Y*" — so Claude stops
+  guessing and getting it wrong in exactly the way that is hardest to notice.
+- **File placement across repos** — see the multi-repo rule under
+  [Git workflow for academics](#git-workflow-for-academics).
+
+A maintained conventions block is far cheaper than the confusion it prevents. The
+failure it heads off is the nasty kind: not a crash, but a plausible-looking
+reference to something that has quietly moved.
+
+---
+
 ## The dual-document pattern: workbook.tex and brief.tex
 
 ### The problem
@@ -834,6 +945,28 @@ document without reading everything around it.
 
 Both of these are also just good LaTeX practice. They cost almost nothing when you
 write them and save significant friction later.
+
+### Make the workbook self-teaching: crash-course appendices
+
+A research workbook accumulates specialist vocabulary fast — every new technique
+brings its own definitions, and six months in, half the file is written in a
+language only present-you speaks fluently. When a returning human, or a fresh
+Claude session, hits that vocabulary cold, it has to reconstruct the meaning from
+scattered sources before it can do anything useful.
+
+The cure is to make the workbook **self-teaching**: carry a set of short
+lecture-note appendices — crash courses — that define every piece of machinery the
+body relies on, and cross-reference them. Each body section that leans on a
+technique points at the crash course for it ("see Appendix B for the definition of
+the transform used here"), so a reader can learn the machinery from the same file
+that uses it, without leaving to hunt through papers.
+
+This costs a little discipline and pays back twice: you (six months later) and
+Claude (cold) both get a document that explains itself. It also keeps the overview
+document (below) clean — jargon is defined once, in the workbook, not smeared
+across every tier.
+
+---
 
 ### Corrections must replace, not append
 
@@ -960,6 +1093,39 @@ not annotated. See the section above on corrections.
 
 ---
 
+### Scaling up: a big-picture overview as a third tier
+
+The dual-document pattern (workbook + brief) is the right default. On a large
+project it is worth adding one tier *above* the brief: a short, standalone
+**overview** (`bigPicture.tex`, ~4–8 pages, equation-light) that is the thing to
+read *first* — before the brief, before the workbook.
+
+The reason is that even the brief is optimised for *precision*, not for a
+five-minute orientation. A newcomer — a collaborator, or a fresh Claude session —
+needs the *shape* of the project first: what the goal is, the one organising idea
+everything hangs on, what follows from it, and an honest sense of where things
+stand. The overview states exactly that and nothing more; for every claim it
+points to the workbook `\S`/`eq.` rather than reproducing the derivation. The
+reading order becomes:
+
+> **overview** (the shape, in five minutes) → **brief** (the current results,
+> stated cleanly) → **workbook** (the full derivations, navigated by `grep`).
+
+The most valuable part of the overview is a **status ledger** — a single
+glanceable box, split by epistemic status (proven / numerically known / open) —
+that answers "where are we?" at a glance. That ledger is only useful if it is
+honest and current, which ties directly into
+[Make epistemic status explicit](#make-epistemic-status-explicit-a-trust-ledger)
+in Part IV: keep it in sync in the *same commit* as the workbook result it
+summarises, and quote the workbook's **real** section titles in the pointers — a
+plausible-but-invented section name is worse than no pointer, and is a common
+failure when a weaker model drafts the overview.
+
+The starter package ships a [`bigPicture.tex`](starter/bigPicture.tex) template
+with the two ledger box styles ready to fill in.
+
+---
+
 ## Session continuity: next-session-prompts.md
 
 ### The problem
@@ -1046,6 +1212,89 @@ Notes: n_-=1 residue validated; other 15 hyperplanes follow by G_3 symmetry.
 
 The DONE log is the long-term record. When you need to explain what your project
 established and in what order, the DONE log is where that history lives.
+
+---
+
+### Strategy maps: planning the route, not just the next task
+
+`next-session-prompts.md` answers *what do I do next*. It does not answer *what is
+the overall plan to get from here to the goal, and which routes have already been
+tried and ruled out*. For a multi-month proof or analysis you want that map
+written down too.
+
+A **strategy map** is a short file (one per active branch, e.g.
+`topic-a-strategy.md`) that lays out the research route as a set of named, ordered
+strategies — A, B, C — each a multi-step plan toward one sub-goal, with a
+recommended order, a status, and cross-references. It is the *strategy*; the
+session log is the *next action*. Writing it down does three things: it stops you
+re-attempting dead ends (record the falsified detours), it makes the dependency
+structure between sub-goals explicit, and it lets a fresh session pick up a *plan*
+rather than just a task. It applies to analytic work, proofs, and write-ups — not
+only to code.
+
+```markdown
+# <Branch> — strategy map (route plan)
+
+Recommended order: A → C → E  (B, D optional / parallel).
+
+## Strategy A — <sub-goal>
+Idea: <one line>.  Status: <done / in progress / blocked on X>.
+1. <step> — <script or workbook section> — <result or "open">
+2. ...
+Falsified detours: <what was tried and ruled out, so nobody repeats it>
+```
+
+Keep a short **honesty ledger** at the foot of the file — a blunt list of what is
+proven versus merely checked (see
+[Make epistemic status explicit](#make-epistemic-status-explicit-a-trust-ledger)).
+When a strategy completes, fold its result into the dated log and the overview's
+status ledger. The starter ships a [`strategy-map.md`](starter/strategy-map.md)
+template.
+
+> **Not to be confused with the [pipeline workflow](#the-pipeline-workflow-keep-claude-fluent-in-your-own-code)**
+> in Part III, which documents a large *code*. A strategy map plans the *research*;
+> a pipeline doc maps a *program*. A big project may want both.
+
+---
+
+### Memory: what to keep re-teaching Claude vs. what goes in CLAUDE.md
+
+Claude Code has a built-in **memory** system: a small store of notes it carries
+between sessions, separate from `CLAUDE.md`. The two are for different things, and
+keeping them separate is what keeps `CLAUDE.md` lean.
+
+- **`CLAUDE.md`** is for the whole project / whole team: the goal, the file map,
+  the conventions, the standing rules. It loads in full every session.
+- **Memory** is for the things you find yourself *re-teaching* Claude across
+  sessions — a package's quirk, a recurring numerics trap, "this file was
+  renamed", how a collaborator's name is spelled. These are recalled by relevance,
+  so you do not pay for all of them at once.
+
+A durable way to run memory is **one fact per file**, each with a little
+front-matter tag, indexed by a one-line-per-entry `MEMORY.md`. Tag each note by
+type: `user` (who the researcher is, preferences), `feedback` (a correction or a
+confirmed working practice — *with the why*), `project` (state or goals not
+derivable from the code), `reference` (a pointer to a tool, package, or external
+resource).
+
+```markdown
+---
+name: convolution-precision-trap
+description: why the naive convolution loses digits here; use the stable form
+metadata:
+  type: reference
+---
+
+<the one fact, stated plainly>. Related: [[other-note-name]].
+```
+
+with a pointer line in `MEMORY.md`:
+`- [Convolution precision trap](convolution-precision-trap.md) — use the stable form`.
+Link related notes with `[[name]]`. Before saving, check for an existing note that
+already covers it — update it rather than adding a duplicate; and delete a note the
+moment it turns out to be wrong. Do not store what the repo already records (code
+structure, git history, results that live in the workbook): memory is for the
+things that are true but *not written down anywhere Claude will re-read*.
 
 ---
 
@@ -1691,6 +1940,30 @@ Ask Claude to build the validation into the script, not as an afterthought.
 A script that computes a result and separately validates it is worth twice a script
 that only computes.
 
+### Beyond re-running: consistency invariants
+
+The strongest numerical check is not "run it again and see if you get the same
+number" — a bug baked into the method will reproduce faithfully. The strongest
+check is a **consistency invariant**: a quantity that two *independent* parts of
+the project both determine, which must agree exactly.
+
+When two computations share no machinery but are linked by the mathematics — a sum
+computed two ways, a symmetry that fixes a coefficient another calculation also
+produces, a limit that must match a known constant — that shared quantity is a
+fingerprint. Compute it from both sides and check they agree to full precision.
+Because the two sides fail differently, a fingerprint catches errors a re-run never
+would, including a *wrong input you trusted*: if a published constant you fed in is
+subtly wrong, an honest invariant refuses to close, and the disagreement tells you
+which side to distrust.
+
+Whenever you notice a redundant relation between two things you compute, promote it
+to a standing check and run it every time either side changes. This sits a level
+above [`/cross-validate`](#skills-reusable-procedures) (an independent numerical
+re-run) and above
+[second-model validation](#validate-physics-claims-with-a-second-model): those
+catch a computation that went wrong; an invariant catches a *structure* that is
+wrong.
+
 ### The run log
 
 For computations that take more than a few seconds, route output to a log file:
@@ -1952,6 +2225,29 @@ out of the repo entirely.
 Rule of thumb: **shared = anything that should be true for the project no matter who
 is working on it; personal = anything true only about you or your machine.**
 
+### Scaling to many sub-projects: the per-branch kit
+
+Once a project has several active sub-projects moving at different speeds, the
+cleanest structure is to give **each active branch its own bundle**, mirroring the
+root. It is the natural end-point of the
+[nested-`CLAUDE.md`](#when-one-claudemd-isnt-enough-nested-files) idea:
+
+```
+<branch>/
+  CLAUDE.md               ← local context (nested; the root file still applies)
+  next-session-prompts.md ← this branch's task queue
+  <branch>-strategy.md    ← this branch's strategy map (route plan)
+  bigPicture<X>.tex       ← this branch's overview (if it has its own workbook)
+  README.md               ← one paragraph: what is here, where the write-up lives
+```
+
+Because branches carry different conventions and move at different rates, bundling
+each one's context, queue, plan, and overview together means a session on a branch
+loads exactly that branch's state and nothing else: the nested `CLAUDE.md` comes in
+on demand, and everything the session needs sits in one folder. This works whether
+you are one person juggling several fronts or a team where different people own
+different branches.
+
 ---
 
 ## Reducing token consumption: rtk
@@ -2128,6 +2424,27 @@ The [`scripts/readme-latex-check.sh`](scripts/readme-latex-check.sh) script
 in this repository scans a file for commonly blocked commands and flags them
 before you push.
 
+### Rendering CLAUDE.md and previewed markdown: keep math KaTeX-safe
+
+Everything above is about your README. One more surface catches people out: if you
+ever *preview* `CLAUDE.md` or any `.md` file as rendered markdown (in the editor's
+preview pane, say), the math there is parsed by **KaTeX**, which is stricter than
+the LaTeX in your `.tex` files. Two things reliably break it:
+
+- **Custom macros** defined only in your `.tex` preambles (`\dif`, `\Op`, your own
+  shorthands) — KaTeX has never heard of them.
+- **Unicode inside a math span** — a literal `π`, `ω`, or a subscript `₂` sitting
+  between the delimiters. Fine in prose; fatal inside the math.
+
+Either one throws a parse error that stops the whole preview at the first hit. The
+fixes cost nothing: inside math spans use only standard KaTeX commands (`\pi`,
+`\mathcal{L}`, `\hat u`, `\theta`, `\bar\omega`), and keep Unicode in prose, not in
+the math. One subtle trap: replacing a custom macro with a *bare letter* can glue
+onto the preceding command — `\leftrightarrow` followed by a bare `d` becomes
+`\leftrightarrowd`, which is undefined — so prefer self-delimiting forms like
+`\mathrm{d}` or `{i}`. A quick audit: split the file on the `$` delimiter and scan
+the odd-numbered (math) segments for non-ASCII characters or unknown `\macros`.
+
 ---
 
 # Part IV: What Claude gets wrong
@@ -2290,6 +2607,60 @@ For a free, scriptable version of this: the [Gemini CLI](https://github.com/goog
 can be called from the terminal (`gemini -p "..."`), which makes it possible to
 run both models on the same question from a single session.
 
+### Make epistemic status explicit: a trust ledger
+
+The failure modes above share a root cause: "done" is allowed to be ambiguous. In
+research, "verified" silently spans a huge range — from "proved it as a theorem" to
+"checked one case numerically and it looked right." Conflating those is how a
+project quietly fools itself, and Claude, left to its own phrasing, will conflate
+them cheerfully.
+
+The fix is to force the tag. Give every result an explicit **epistemic status**,
+and keep a short **honesty ledger** that lists what a claimed proof still
+*assumes*. A workable set of levels:
+
+- **Theorem** — proved, or machine-checked.
+- **Numerically verified to N digits** — the structure is established, but the
+  value is not yet analytic.
+- **Argument modulo stated inputs** — rigorous *if* the listed inputs hold; the
+  inputs are named, not hidden.
+- **Open** — genuinely unproven.
+
+Making the tag mandatory — and separately listing what a proof leans on — keeps the
+status honest and makes the remaining work obvious. It is exactly what stops a
+partial result ("Layer 1 establishes property P") from silently inflating into the
+stronger claim it is *not* ("Layer 1 proves the theorem"). Keep this ledger where
+you will see it: the coloured status boxes in the overview
+([`bigPicture.tex`](#scaling-up-a-big-picture-overview-as-a-third-tier)), and a
+one-line "inputs assumed / verified by machine / needed for full rigour" note at
+the foot of each strategy map.
+
+### Keep a trap log: the failures that produce wrong answers, not errors
+
+Some tool failures announce themselves with a stack trace. The dangerous ones do
+not — they hand back a *wrong answer* with no error at all, and you lose an hour
+before you even suspect the tool. These traps recur, and they are invisible, so the
+highest-leverage habit is to write each one down the first time it bites: the
+symptom, the cause, and the fix. Keep them as `feedback`/`reference`
+[memories](#memory-what-to-keep-re-teaching-claude-vs-what-goes-in-claudemd) or in
+a `GOTCHAS` section, and a returning session — or a cheaper model — recognises in
+ten seconds what first cost you an hour.
+
+The traps worth logging are the silent ones. A few examples of the *shape* (yours
+will be different):
+
+- A script runner that silently **drops continuation lines**, so a multi-line
+  expression is truncated and returns a plausible-but-wrong number — no error. Fix:
+  one expression per line, plus a sanity print of the term count.
+- A numerical routine that **loses precision** on inputs with a large dynamic
+  range, quietly returning fewer good digits than you think. Fix: a more stable
+  formulation, and a precision gate that fails loudly.
+- A long recurrence where **significance collapses** part-way through. Fix:
+  fixed-precision arithmetic with an a-posteriori check.
+
+The point is not these specific traps but the reflex: the moment a tool hands you a
+wrong answer with a straight face, log it before you fix it.
+
 ---
 
 # Appendix
@@ -2309,6 +2680,8 @@ starter/
 ├── next-session-prompts.md          ← session continuity log
 ├── workbook.tex                     ← LaTeX stub for the working record (overwrite if you have one)
 ├── brief.tex                        ← condensed-reference stub (overwrite if you have one)
+├── bigPicture.tex                   ← (big projects — optional) equation-light overview; read before the workbook
+├── strategy-map.md                  ← (big projects — optional) route plan: named strategies + honesty ledger
 ├── .gitignore                       ← ignores Overleaf clone, LaTeX/Python artifacts
 ├── .vscode/
 │   └── settings.json               ← word wrap for notebook cells only (not your .tex/.py files)
@@ -2355,6 +2728,8 @@ in Part I.
 | [`starter/next-session-prompts.md`](starter/next-session-prompts.md) | Session log template with format examples |
 | [`starter/workbook.tex`](starter/workbook.tex) | LaTeX stub for the working record: preamble, theorem environments, skeleton sections — the research journal where proofs, derivations, and discussions live |
 | [`starter/brief.tex`](starter/brief.tex) | Condensed-reference stub with status tags (ESTABLISHED/CONJECTURED/OPEN) and cross-reference structure — fill in as results accumulate |
+| [`starter/bigPicture.tex`](starter/bigPicture.tex) | (Big projects — optional) Equation-light **overview** document — the five-minute on-ramp read *before* the workbook; ships proven / open status-ledger boxes ready to fill in. The top tier of the overview → brief → workbook stack |
+| [`starter/strategy-map.md`](starter/strategy-map.md) | (Big projects — optional) **Strategy-map** template: the research route as named, ordered strategies (A, B, C) with a recommended order, falsified-detour notes, and an honesty ledger. Distinct from `next-session-prompts.md` (the immediate task queue) and from the pipeline workflow (which documents a *code*) |
 | [`starter/.gitignore`](starter/.gitignore) | Ignore rules: Overleaf clone, LaTeX build artifacts, Python/Wolfram scratch, generated outputs (tracks `.vscode/settings.json`, ignores other VS Code state) |
 | [`starter/.vscode/settings.json`](starter/.vscode/settings.json) | Word wrap for notebook *cells only* (`notebook.editorOptionsCustomizations`), so `.tex`/`.py`/`.md` files are left alone, plus wrapping output (`notebook.output.wordWrap`) and Wolfram results as wrapping plain text instead of a scroll-only image (`wolfbook.notebook.rendering.outputFormat: InputForm`) (see `docs/wolfbook-notebook-ux.md`) |
 | [`starter/.claude/settings.json`](starter/.claude/settings.json) | Annotated generic settings: permissions that allow routine commands, ask before anything dangerous, and block nothing by default + hooks for pre-compact, dual-remote push, and promise-checker |
