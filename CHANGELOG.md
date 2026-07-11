@@ -40,8 +40,8 @@ and did anything break?" Nothing has forced a major bump yet, so we are still on
 - **Two new optional starter templates:** [`starter/bigPicture.tex`](starter/bigPicture.tex)
   (the overview document, with ready-made proven/open ledger boxes) and
   [`starter/strategy-map.md`](starter/strategy-map.md) (the route-plan template). Both are for
-  *big* projects and are not installed by the bootstrap — copy them when a project reaches that
-  scale.
+  *big* projects; the bootstrap offers them behind a "large / multi-branch project?" question
+  (declined by default) — or copy them by hand when a project reaches that scale.
 
 ### Clarified
 - **"Strategy map" vs. "pipeline workflow."** These are different tools and the guide now says
