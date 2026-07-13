@@ -944,6 +944,13 @@ are hard for Claude to navigate. A clear, deep hierarchy (sections → subsectio
 subsubsections, with meaningful names) lets Claude find the right part of the
 document without reading everything around it.
 
+**Why it pays off: token economy.** Every line Claude reads to *find* something is
+context spent. A labelled result it can jump to with a single targeted read costs a
+fraction of scanning the surrounding pages — so dense `\label`s and a deep hierarchy
+are not just navigation aids: they make each session cheaper and let Claude survey a
+large workbook to pull exactly what it needs, without burning its context window on
+the search.
+
 Both of these are also just good LaTeX practice. They cost almost nothing when you
 write them and save significant friction later.
 

@@ -121,6 +121,10 @@ computation gives." If in doubt, over-explain.
   write for a human reader is the right amount.
 - Maintain a clear section hierarchy (sections → subsections → subsubsections with
   meaningful names). Flat structure makes targeted reads unreliable.
+- Why it matters: every line Claude reads to *find* something is context spent. Dense
+  labels + a deep hierarchy let it jump straight to the one result it needs (a cheap
+  targeted read) instead of scanning pages — cheaper sessions, and it can survey a
+  large workbook without exhausting its context window.
 
 ## Corrections in workbook.tex (NON-NEGOTIABLE)
 <!-- This rule prevents Claude from working from wrong information in future sessions. -->

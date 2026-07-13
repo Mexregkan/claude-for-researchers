@@ -47,6 +47,11 @@ and did anything break?" Nothing has forced a major bump yet, so we are still on
 - **"Strategy map" vs. "pipeline workflow."** These are different tools and the guide now says
   so explicitly: a **strategy map** plans the *research* (proofs, analysis, write-ups); a
   **pipeline** doc (Part III) maps a large *code*. A big project may want both.
+- **Cross-references are token economy, made explicit.** The "structuring workbook.tex" guidance
+  (README + `starter/CLAUDE.md`) now spells out *why* to label everything and cross-reference
+  liberally: every line Claude reads to *find* something is context spent, so dense `\label`s +
+  a deep hierarchy let it pull exactly what it needs with cheap targeted reads instead of
+  scanning pages.
 
 ### Action needed if you set up a project before this release
 - **Nothing required — it is all additive and optional.** For a large, multi-branch project,
