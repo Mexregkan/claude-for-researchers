@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.07 · v1.6.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.07 · v1.7.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -821,6 +821,57 @@ A snapshot template for a multi-branch project:
 
 ---
 
+#### The research changelog: one row per result
+
+Once the dated log outgrows the DONE log at the bottom of
+`next-session-prompts.md`, give it its own file: `CHANGELOG.md` at the project
+root. Not a software release changelog — a **research changelog**: the project's
+long-term memory of *results*, where `next-session-prompts.md` is the memory of
+*sessions*. Template: [`starter/CHANGELOG.md`](starter/CHANGELOG.md).
+
+The format that works is a table, one row per result, grouped by branch:
+
+| Item | Status |
+|------|--------|
+| *the claim, not the activity* | `DONE` / `IN PROGRESS` / `OPEN` / `FALSIFIED` / `SUPERSEDED` / `MOVED OUT`, then the payload |
+
+and each row's payload carries the same five things every time:
+
+- **the date**,
+- **where it is written up** — the `workbook.tex` section *label*, not a page number,
+- **which script produced it**, by path,
+- **which data file holds the output**,
+- **the honest residue** — what this result did *not* settle: the case still
+  assumed, the range not covered, the step verified numerically rather than proved.
+
+Close substantial rows with a **`Docs synced:`** line naming the other documents
+you updated — `brief.tex`, `bigPicture.tex`, the strategy map, the `CLAUDE.md`
+snapshot. When that line is missing, the doc set has usually drifted.
+
+**Write the failures down.** `FALSIFIED` rows — the route that looked right and
+broke at order four, the identity that failed at the first non-trivial case — are
+the highest-value rows in the file. They are the only thing that stops you, a
+collaborator, or Claude from cheerfully re-running a dead end six weeks later.
+Record what broke, concretely, and what weaker statement survives.
+
+**Why it pays even though it is never loaded into context.** `CLAUDE.md` gets read
+every session; this file gets read on demand — which is exactly the point. It is
+an *index into the project*: one `grep` for a symbol, a method, or a filename
+returns the section label, the script, and the data file for every result that
+touched it. A few hundred tokens instead of opening a hundred-page workbook. So
+write rows so that grep works — put the searchable names *in* the row rather than
+gesturing at "the usual script".
+
+**How it starts.** Not on day one, and not as an empty file. It is born the day
+your `CLAUDE.md` status section or DONE log has become a wall of dated paragraphs:
+you *move* that content into `CHANGELOG.md` and replace it with a per-branch
+snapshot. From then on the rule is two-way — append here when a result lands,
+refresh the snapshot in `CLAUDE.md` when a branch's DONE/OPEN *frontier* moves.
+Expect to re-condense: the snapshot quietly re-bloats as dated entries creep back
+in, and the fix is the same move each time.
+
+---
+
 ### Convention hygiene: pin decisions so they don't drift
 
 Some decisions are easy to make once and then silently violate: a file rename, a
@@ -1220,6 +1271,15 @@ Notes: n_-=1 residue validated; other 15 hyperplanes follow by G_3 symmetry.
 
 The DONE log is the long-term record. When you need to explain what your project
 established and in what order, the DONE log is where that history lives.
+
+On a long project it will outgrow this file. When it does, graduate it to a
+dedicated `CHANGELOG.md` — see
+[The research changelog](#the-research-changelog-one-row-per-result). The two are
+not the same artifact: the DONE log is *chronological, per session* ("what did I
+finish on Tuesday"), while the research changelog is *an index, per result*
+("everything we know about the residue formula, with its script and its
+limitation"). Start with the DONE log; move to the changelog when you find
+yourself scrolling to answer "did we already check this?".
 
 ---
 
@@ -2690,6 +2750,7 @@ starter/
 ├── brief.tex                        ← condensed-reference stub (overwrite if you have one)
 ├── bigPicture.tex                   ← (big projects — optional) equation-light overview; read before the workbook
 ├── strategy-map.md                  ← (big projects — optional) route plan: named strategies + honesty ledger
+├── CHANGELOG.md                     ← (big projects — optional) research changelog: one row per result, dated
 ├── .gitignore                       ← ignores Overleaf clone, LaTeX/Python artifacts
 ├── .vscode/
 │   └── settings.json               ← word wrap for notebook cells only (not your .tex/.py files)
@@ -2738,6 +2799,7 @@ in Part I.
 | [`starter/brief.tex`](starter/brief.tex) | Condensed-reference stub with status tags (ESTABLISHED/CONJECTURED/OPEN) and cross-reference structure — fill in as results accumulate |
 | [`starter/bigPicture.tex`](starter/bigPicture.tex) | (Big projects — optional) Equation-light **overview** document — the five-minute on-ramp read *before* the workbook; ships proven / open status-ledger boxes ready to fill in. The top tier of the overview → brief → workbook stack |
 | [`starter/strategy-map.md`](starter/strategy-map.md) | (Big projects — optional) **Strategy-map** template: the research route as named, ordered strategies (A, B, C) with a recommended order, falsified-detour notes, and an honesty ledger. Distinct from `next-session-prompts.md` (the immediate task queue) and from the pipeline workflow (which documents a *code*) |
+| [`starter/CHANGELOG.md`](starter/CHANGELOG.md) | (Big projects — optional) **Research changelog**: the dated, per-result log — one table row per result, each carrying its date, workbook section label, script, data file, and honest residue, plus `FALSIFIED` rows for the routes already ruled out. Keeps `CLAUDE.md`'s status section a lean snapshot and gives the project a greppable index. Distinct from the DONE log in `next-session-prompts.md` (chronological, per session) |
 | [`starter/.gitignore`](starter/.gitignore) | Ignore rules: Overleaf clone, LaTeX build artifacts, Python/Wolfram scratch, generated outputs (tracks `.vscode/settings.json`, ignores other VS Code state) |
 | [`starter/.vscode/settings.json`](starter/.vscode/settings.json) | Word wrap for notebook *cells only* (`notebook.editorOptionsCustomizations`), so `.tex`/`.py`/`.md` files are left alone, plus wrapping output (`notebook.output.wordWrap`) and Wolfram results as wrapping plain text instead of a scroll-only image (`wolfbook.notebook.rendering.outputFormat: InputForm`) (see `docs/wolfbook-notebook-ux.md`) |
 | [`starter/.claude/settings.json`](starter/.claude/settings.json) | Annotated generic settings: permissions that allow routine commands, ask before anything dangerous, and block nothing by default + hooks for pre-compact, dual-remote push, and promise-checker |

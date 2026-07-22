@@ -99,7 +99,7 @@ yesno "Install validation skills (reality-check, cross-validate)? Recommended wh
 yesno "Is this paired with a SHARED Overleaf project?" n    && OVERLEAF=1 || OVERLEAF=0
 yesno "Do you push to TWO git remotes (e.g. personal GitHub + institution GitLab)?" n \
                                                             && DUALREMOTE=1 || DUALREMOTE=0
-yesno "Large / multi-branch project? (adds bigPicture.tex overview + strategy-map.md route plan)" n \
+yesno "Large / multi-branch project? (adds bigPicture.tex overview, strategy-map.md route plan, CHANGELOG.md result log)" n \
                                                             && BIGPROJECT=1 || BIGPROJECT=0
 
 say ""
@@ -115,15 +115,20 @@ core starter/.claude/hooks/pre-compact.sh     .claude/hooks/pre-compact.sh
 core starter/.claude/hooks/promise-checker.sh .claude/hooks/promise-checker.sh
 chmod +x .claude/hooks/*.sh 2>/dev/null
 
-# Big-project templates (optional): the equation-light overview doc and the
-# strategy map. Only useful once a project is large / multi-branch, so they are
-# gated on the answer above rather than installed for every project.
+# Big-project templates (optional): the equation-light overview doc, the strategy
+# map, and the research changelog. Only useful once a project is large /
+# multi-branch, so they are gated on the answer above rather than installed for
+# every project. (CHANGELOG.md stays EMPTY of rows until the DONE log in
+# next-session-prompts.md outgrows itself — the template says so.)
 if [ "$BIGPROJECT" -eq 1 ]; then
     core starter/bigPicture.tex  bigPicture.tex
     core starter/strategy-map.md strategy-map.md
+    core starter/CHANGELOG.md    CHANGELOG.md
     say "  -> big-project templates: fill in bigPicture.tex (5-min overview, read first)"
     say "     and strategy-map.md (route plan). See the guide's dual-document and"
     say "     session-continuity sections."
+    say "  -> CHANGELOG.md is the per-result log; start moving entries into it when the"
+    say "     DONE log or the CLAUDE.md status section grows past a screenful."
 fi
 
 # Fill the placeholders a script CAN fill (Claude fills the rest in session 1).

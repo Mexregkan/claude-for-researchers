@@ -40,7 +40,14 @@ domain as a function of their spectral parameters, using the Rankin–Selberg un
 
 ## Current status
 <!-- One screenful. What is established? What is the last result? What is the exact next step?
-     Update this before ending every session. -->
+     Update this before ending every session.
+
+     KEEP IT A SNAPSHOT, NOT A LOG. This file is re-read every session, so every line
+     costs tokens forever. Rule of thumb: if a status line has a date in it, it belongs
+     in the dated log, not here — the DONE log at the bottom of next-session-prompts.md,
+     or CHANGELOG.md once that history gets long (see starter/CHANGELOG.md).
+     Two-way rule: append to the dated log when a result LANDS; refresh this snapshot
+     when a branch's DONE/OPEN FRONTIER moves. -->
 
 **Last result (DATE):** [what was computed/proved]
 

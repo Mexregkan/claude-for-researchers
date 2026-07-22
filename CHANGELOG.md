@@ -13,6 +13,54 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.07 · v1.7.0 — 2026-07-22 (update)
+
+### Added
+- **The research changelog — a per-result log, and a template for it.** The previous release
+  said the dated log should live outside `CLAUDE.md`, and left it there. This one says what
+  that file actually looks like, because the format turns out to matter. A **research
+  changelog** (`CHANGELOG.md` at your project root — not a software release log) is a table
+  with **one row per result**, grouped by branch, where every row carries the same five things:
+  the **date**, the **`workbook.tex` section label** where it is written up, the **script**
+  that produced it, the **data file** holding the output, and the **honest residue** — what the
+  result did *not* settle. Substantial rows close with a `Docs synced:` line naming the other
+  documents you updated, which is how you notice the doc set drifting.
+
+  Two points the guide now makes explicitly. **`FALSIFIED` rows are the most valuable rows in
+  the file** — the route that broke at order four, recorded with *how* it broke, is what stops
+  you or Claude from re-running it six weeks later. And the file **earns its keep precisely
+  because it is never loaded into context**: it is a greppable index into the project, so one
+  `grep` for a symbol returns its section, its script, and its data file for a few hundred
+  tokens instead of opening a hundred-page workbook. Write rows so grep works.
+
+  New template: [`starter/CHANGELOG.md`](starter/CHANGELOG.md) (heavily commented, with a
+  worked row). New README subsection, "The research changelog: one row per result", under
+  *Status vs. changelog*; the DONE-log section now explains when to graduate from one to the
+  other. `scripts/bootstrap.sh` offers the template behind the existing "large / multi-branch
+  project?" question, alongside `bigPicture.tex` and `strategy-map.md`.
+
+### Clarified
+- **DONE log vs. research changelog.** They are different artifacts and the guide now says so:
+  the DONE log in `next-session-prompts.md` is *chronological, per session* ("what did I finish
+  on Tuesday"); the research changelog is *an index, per result* ("everything we know about
+  this formula, with its script and its limitation"). Start with the DONE log; graduate when
+  you catch yourself scrolling it to answer "did we already check this?".
+- **The status snapshot re-bloats — expect to re-condense.** Dated entries creep back into
+  `CLAUDE.md`'s status section over months; the fix is the same move each time, and
+  [`starter/CLAUDE.md`](starter/CLAUDE.md) now carries the rule inline ("if a status line has a
+  date in it, it belongs in the dated log") together with the two-way discipline: append to the
+  dated log when a result *lands*, refresh the snapshot when a branch's DONE/OPEN *frontier*
+  moves.
+
+### Action needed if you set up a project before this release
+- **Nothing required — additive and optional.** Copy
+  [`starter/CHANGELOG.md`](starter/CHANGELOG.md) into your project when your DONE log or
+  `CLAUDE.md` status section outgrows a screenful (start it by *moving* that content in, not as
+  an empty file). Re-copying the comment block in `starter/CLAUDE.md` § Current status is
+  cosmetic.
+
+---
+
 ## v2026.07 · v1.6.0 — 2026-07-11 (update)
 
 ### Added
