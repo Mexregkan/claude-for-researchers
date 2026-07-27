@@ -532,7 +532,7 @@ Include:
 Example:
 ```
 - ξ(s) = π^{-s/2} Γ(s/2) ζ(s). Functional equation: ξ(s) = ξ(1-s).
-  Simple poles at s=0 (residue -1/2) and s=1 (residue +1/2).
+  Simple poles at s=0 (residue -1) and s=1 (residue +1).
 - E*_s = ξ(2s) E(z,s) is the completed Eisenstein series. NOT the same as E(z,s).
   Simple poles at s=0,1 with residues ∓1/2.
 - M_3(μ_0,μ_1,μ_2,μ_3) = the depth-three Mellin transform. The variable s = μ_0
