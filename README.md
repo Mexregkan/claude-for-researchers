@@ -65,16 +65,17 @@ This guide serves two audiences at once, so it is organised in parts:
 12. [Settings and hooks](#settings-and-hooks)
 13. [Group projects: shared vs personal configuration](#group-projects-shared-vs-personal-configuration)
 14. [Reducing token consumption: rtk](#reducing-token-consumption-rtk)
-15. [distill: filtering noisy research-command output](#distill-filtering-noisy-research-command-output)
-16. [GitHub README and LaTeX](#github-readme-and-latex)
+15. [The pipeline workflow: keep Claude fluent in your own code](#the-pipeline-workflow-keep-claude-fluent-in-your-own-code)
+16. [distill: filtering noisy research-command output](#distill-filtering-noisy-research-command-output)
+17. [GitHub README and LaTeX](#github-readme-and-latex)
 
 **[Part IV: What Claude gets wrong](#part-iv-what-claude-gets-wrong)** — *required reading*
 
-17. [Honest limitations](#honest-limitations)
+18. [Honest limitations](#honest-limitations)
 
 **[Appendix](#appendix)**
 
-18. [Templates and scripts in this repo](#templates-and-scripts-in-this-repo)
+19. [Templates and scripts in this repo](#templates-and-scripts-in-this-repo)
 
 ---
 
@@ -1820,7 +1821,7 @@ You find `<project-id>` and the `<token>` under Overleaf's *Git* sync menu. Stor
 the token in your OS keychain via `git credential approve` as shown — never put it
 in a URL or commit it.
 
-**Day-to-day use.** The [`overleaf-sync`](starter/.claude/skills/overleaf-sync.md)
+**Day-to-day use.** The [`overleaf-sync`](starter/.claude/skills/overleaf-sync/SKILL.md)
 skill wraps the whole workflow:
 
 - `/overleaf-sync` (or `status`) — has Overleaf moved ahead? Shows what changed. Read-only.
