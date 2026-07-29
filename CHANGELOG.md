@@ -13,6 +13,28 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.07 · v1.8.0 — 2026-07-29 (update)
+
+### Added
+- **Plan mode — investigate before you edit.** A new Part II section on Claude Code's
+  read-only *plan mode*: Claude reads, searches, and runs side-effect-free commands, then
+  hands you a written plan and changes nothing until you approve it. The section covers how to
+  toggle it (Shift+Tab cycles normal → auto-accept → plan; or `--permission-mode plan`) and the
+  research situations where it pays — structural refactors, many-file changes that must stay in
+  sync (a skill + README + CHANGELOG, or a convention rename across `workbook.tex` and
+  `brief.tex`), and subtle tasks where you want to check Claude's understanding *before* it acts.
+  A worked `numerics/` refactor example shows the payoff: catching a stray "while I'm in there"
+  sign-convention change in a five-line plan beats catching it in a 600-line diff. It is honest
+  about the limits — skip it for small edits and pure Q&A, and it reviews the *plan*, not your
+  mathematics; verification is still `/reality-check`, `/cross-validate`, and your regression
+  suites.
+
+### Action needed if you set up a project before this release
+- **Nothing — this release is guide-only.** Plan mode is a built-in Claude Code feature, not a
+  starter file, so there is nothing to re-copy. Read the new "Plan mode" section and use it.
+
+---
+
 ## v2026.07 · v1.7.0 — 2026-07-22 (update)
 
 ### Added

@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.07 · v1.7.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.07 · v1.8.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -56,26 +56,27 @@ This guide serves two audiences at once, so it is organised in parts:
 6. [The dual-document pattern: workbook.tex and brief.tex](#the-dual-document-pattern-workbooktex-and-brieftex)
 7. [Session continuity: next-session-prompts.md](#session-continuity-next-session-promptsmd)
 8. [Session length and context limits](#session-length-and-context-limits)
-9. [Skills: reusable procedures](#skills-reusable-procedures)
-10. [Git workflow for academics](#git-workflow-for-academics)
-11. [Numerics and computation](#numerics-and-computation)
+9. [Plan mode: investigate before you edit](#plan-mode-investigate-before-you-edit)
+10. [Skills: reusable procedures](#skills-reusable-procedures)
+11. [Git workflow for academics](#git-workflow-for-academics)
+12. [Numerics and computation](#numerics-and-computation)
 
 **[Part III: Power tools](#part-iii-power-tools)** — *optional; adopt once the basics feel comfortable*
 
-12. [Settings and hooks](#settings-and-hooks)
-13. [Group projects: shared vs personal configuration](#group-projects-shared-vs-personal-configuration)
-14. [Reducing token consumption: rtk](#reducing-token-consumption-rtk)
-15. [The pipeline workflow: keep Claude fluent in your own code](#the-pipeline-workflow-keep-claude-fluent-in-your-own-code)
-16. [distill: filtering noisy research-command output](#distill-filtering-noisy-research-command-output)
-17. [GitHub README and LaTeX](#github-readme-and-latex)
+13. [Settings and hooks](#settings-and-hooks)
+14. [Group projects: shared vs personal configuration](#group-projects-shared-vs-personal-configuration)
+15. [Reducing token consumption: rtk](#reducing-token-consumption-rtk)
+16. [The pipeline workflow: keep Claude fluent in your own code](#the-pipeline-workflow-keep-claude-fluent-in-your-own-code)
+17. [distill: filtering noisy research-command output](#distill-filtering-noisy-research-command-output)
+18. [GitHub README and LaTeX](#github-readme-and-latex)
 
 **[Part IV: What Claude gets wrong](#part-iv-what-claude-gets-wrong)** — *required reading*
 
-18. [Honest limitations](#honest-limitations)
+19. [Honest limitations](#honest-limitations)
 
 **[Appendix](#appendix)**
 
-19. [Templates and scripts in this repo](#templates-and-scripts-in-this-repo)
+20. [Templates and scripts in this repo](#templates-and-scripts-in-this-repo)
 
 ---
 
@@ -1510,6 +1511,96 @@ for `brief.tex`, too detailed for CLAUDE.md.
 
 Together, they mean that ending a session and starting a new one is a deliberate
 tool, not a loss. Use it.
+
+---
+
+## Plan mode: investigate before you edit
+
+Claude Code has a **read-only mode** — plan mode — in which Claude can read files,
+search the repo, and run commands that change nothing, but *cannot edit files,
+write, or run anything with side effects*. Instead of acting, it investigates the
+problem and hands you a written plan. Nothing in your project changes until you
+approve it.
+
+The point is to separate two phases that usually get mashed together: **figuring
+out what to do** and **doing it**. For a small, obvious edit that separation is
+pure overhead. For a big, ambiguous, or many-file change it is exactly what you
+want — because the cheapest place to catch a misunderstanding is in a plan, before
+a single line has moved.
+
+### How to turn it on
+
+Press **Shift+Tab** to cycle the mode indicator at the bottom of the input box:
+normal → auto-accept edits → **plan mode**. (You can also start a session already
+in it with `claude --permission-mode plan`.) Then work as usual: ask your question
+or describe the change. Claude reads and researches, then presents a plan and asks
+for approval. Approve it and Claude leaves plan mode and executes; reject it and
+you refine the instructions with nothing lost and nothing to undo. Press Shift+Tab
+again at any time to leave the mode by hand.
+
+### Why it helps research work
+
+Recall the [mental model](#the-right-mental-model): Claude follows instructions,
+and it does not reliably know when it has misunderstood you. Plan mode turns that
+weakness into something you can inspect. Before Claude touches your workbook or
+your numerics, you get to read *what it thinks the task is* and *how it intends to
+do it* — and correct both.
+
+It earns its keep in a few specific situations:
+
+- **A structural change you can't casually undo** — splitting a grown
+  `workbook.tex` into per-chapter files, reorganising `numerics/`, refactoring a
+  computation script. Confirm Claude has the layout right before it starts moving
+  things.
+- **A many-file change where order and consistency matter** — a change that has to
+  land in a skill, the README, and the CHANGELOG together, or a convention rename
+  that must stay in sync across `workbook.tex` and `brief.tex`. The plan is the
+  checklist; you see the whole blast radius before any of it happens.
+- **When you are not sure Claude has understood a subtle task** — a delicate
+  derivation, a tricky bug in a script. Making it state its understanding first
+  surfaces a wrong mental model cheaply, before wasted edits fill the context
+  window with work you will throw away.
+- **Getting oriented in an unfamiliar corner of the repo** with zero risk of an
+  accidental edit.
+
+### An example
+
+Suppose `numerics/eisenstein.py` has grown into a 600-line tangle and you want it
+split into modules. In normal mode Claude would start carving it up immediately.
+In plan mode you get this first:
+
+> **Plan**
+> 1. Create `numerics/eisenstein/` with `series.py`, `lvalues.py`, `residues.py`.
+> 2. Move the Eisenstein-series functions to `series.py`, the L-value lookups to
+>    `lvalues.py`, the residue formulas to `residues.py`.
+> 3. Rewrite imports at the three call sites (`run_check.py`, `validate.py`,
+>    `sweep.py`).
+> 4. **Normalise the residue sign convention** to match `lvalues.py` while I am in
+>    there.
+> 5. Re-run `validate.py` to confirm the split changed nothing.
+
+Steps 1–3 and 5 are exactly what you asked for. Step 4 is not — that "while I am
+in there" sign change is precisely the kind of silent normalisation edit that
+would flip a result and cost you an afternoon of debugging. You reply "do
+everything except step 4 — leave the sign convention alone," approve, and Claude
+executes the corrected plan. You caught it by reading a five-line plan instead of
+a 600-line diff.
+
+### When to skip it
+
+Plan mode is not free discipline for everything:
+
+- **Small, obvious edits** — fixing a typo, compiling, adding one paragraph — cost
+  more in planning overhead than they save.
+- **Pure question-answering and exploration** change nothing anyway, so the mode
+  adds nothing.
+- **It is not a verification tool.** It reviews *the plan for changes*, not whether
+  your mathematics or your numerics are correct. That remains the job of
+  `/reality-check`, `/cross-validate`, and your regression suites. A plausible plan
+  can still rest on a wrong idea — so read the plan; do not rubber-stamp it.
+
+Use plan mode as a deliberate move for the changes that would hurt to get wrong,
+and skip it for the ones that would not.
 
 ---
 
