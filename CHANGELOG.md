@@ -13,6 +13,39 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.07 · v1.9.0 — 2026-07-30 (update)
+
+### Added
+- **The ChatGPT twin.** This toolkit now has a sister project for the OpenAI ecosystem:
+  [chatgpt-for-researchers](https://github.com/Mexregkan/chatgpt-for-researchers) — the
+  same guide and starter package, rebuilt for Codex (ChatGPT's coding agent) with
+  `AGENTS.md`, `.codex/config.toml`, `.agents/skills/`, Codex hooks, and a
+  platform-enforced read-only pipeline auditor. A new appendix section, "The ChatGPT
+  twin: chatgpt-for-researchers", introduces it and carries a side-by-side table of
+  exactly which files differ between the two and how (CLAUDE.md ↔ AGENTS.md,
+  settings.json permission lists ↔ sandbox + approval policy, `/skill` ↔ `$skill`,
+  and so on). Everything agent-agnostic — the LaTeX templates, the session-log
+  template, the Wolfbook tooling, the git scripts — is byte-identical between the
+  twins and kept in sync.
+- **Using both: Claude and Codex on one project.** A second new appendix section for
+  researchers who want *both* agents on the same project: how to share one setup without
+  drift (a single `AGENTS.md` as source of truth with `CLAUDE.md` reduced to an `@AGENTS.md`
+  import; one canonical skills folder, symlinked; the same hook scripts registered in both
+  `.claude/settings.json` and `.codex/hooks.json`; and the one-writer-at-a-time rule with
+  git as the handover). It then documents **the bridge**: because both CLIs are scriptable,
+  each agent can consult the other as a subprocess — `codex exec --sandbox read-only "…"`
+  from a Claude session, `claude -p "…"` from a Codex session — which turns cross-model
+  validation from a copy-paste ritual into one shell command. Three worked patterns
+  (second opinion on a contested result, cross-review of a landed diff, a standing
+  second-opinion rule for the instruction file) plus the honest caveats: you are the
+  referee, keep consultations read-only and blind, one round only — two agreeable models
+  chatting converge, they do not verify.
+
+### Action needed if you set up a project before this release
+- **Nothing — this release is guide-only.** No starter file changed.
+
+---
+
 ## v2026.07 · v1.8.0 — 2026-07-29 (update)
 
 ### Added

@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.07 · v1.8.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.07 · v1.9.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -77,6 +77,8 @@ This guide serves two audiences at once, so it is organised in parts:
 **[Appendix](#appendix)**
 
 20. [Templates and scripts in this repo](#templates-and-scripts-in-this-repo)
+21. [The ChatGPT twin: chatgpt-for-researchers](#the-chatgpt-twin-chatgpt-for-researchers)
+22. [Using both: Claude and Codex on one project](#using-both-claude-and-codex-on-one-project)
 
 ---
 
@@ -2923,6 +2925,165 @@ in Part I.
 | [`docs/wolfbook-notebook-ux.md`](docs/wolfbook-notebook-ux.md) | Why notebook word wrap needs the cell-scoped `notebook.editorOptionsCustomizations` key, how built-in section folding works, and how to install both |
 | [`docs/wolfbook-kernel-errors.md`](docs/wolfbook-kernel-errors.md) | Why a kernel message (undefined symbol, structure mismatch) is stop-and-fix; `runCell` surfaces messages and returns fresh output (read them), while `getNotebookContext` is a cached snapshot (don't read as fresh) — verify by *evaluating*. Verified against the v2.7.14 source: a behavioral fix (the `wolfram-headless` skill), not a Wolfbook bug |
 | [`docs/pipeline-workflow.md`](docs/pipeline-workflow.md) | The pipeline workflow: give every big code a short living "pipeline" doc Claude reads first, keep code and doc in lockstep, and audit both. The four tools (`write-`/`check-`/`apply-pipeline` skills + a read-only `pipeline-auditor` sub-agent) + a PostToolUse guard hook, the three invariants, the lifecycle, and how to set it up in your own project |
+
+---
+
+## The ChatGPT twin: chatgpt-for-researchers
+
+This toolkit has a twin for the OpenAI ecosystem:
+**[chatgpt-for-researchers](https://github.com/Mexregkan/chatgpt-for-researchers)** —
+the same guide and the same starter package, rebuilt for
+[Codex](https://chatgpt.com/codex), ChatGPT's coding agent. If you (or a
+collaborator) work with ChatGPT instead of Claude, start there; the workflow is
+identical, so a team can even mix the two — the shared documents
+(`workbook.tex`, `brief.tex`, the session log) are agent-agnostic by design.
+
+The twin was produced by porting this repo file by file and re-verifying every
+platform-specific claim against OpenAI's documentation. Everything
+agent-agnostic is **byte-identical** between the two — the LaTeX templates
+(workbook / brief / bigPicture), the strategy-map and research-changelog
+templates, the session-log template, the entire Wolfbook tooling
+(converters, patches, docs), and the git scripts. What differs is only the
+agent-specific wiring:
+
+| This repo (Claude Code) | Twin (ChatGPT / Codex) |
+|---|---|
+| `CLAUDE.md` — global `~/.claude/CLAUDE.md`, personal `CLAUDE.local.md` | `AGENTS.md` — global `~/.codex/AGENTS.md`, personal `AGENTS.override.md` |
+| `.claude/settings.json` — allow/ask permission lists | `.codex/config.toml` — OS-level sandbox (`workspace-write`) + approval policy (`on-request`) |
+| Skills: `.claude/skills/<name>/SKILL.md`, invoked `/name` | Same SKILL.md folder standard: `.agents/skills/<name>/SKILL.md`, invoked `$name` |
+| Global skills: `~/.claude/skills/` | User-scope skills: `~/.agents/skills/` |
+| Hooks declared in `.claude/settings.json` | Hooks declared in `.codex/hooks.json`; each script must be trusted once via `/hooks` |
+| Dual-remote mirror: a `PostToolUse` matcher on `Bash(git push github*)` | A `git-mirror.sh` hook that filters the pushed command itself |
+| Sub-agent: `.claude/agents/pipeline-auditor.md` | `.codex/agents/pipeline-auditor.toml`, with a platform-enforced read-only sandbox |
+| Plan mode: Shift+Tab or `--permission-mode plan` | `/plan` (plus `codex --sandbox read-only` for hard read-only) |
+| Context meters: `/context`, `/usage` | `/status`, `/usage` |
+| Fresh-session reality check: open a new session | `codex exec --sandbox read-only "…"` — non-interactive and isolated |
+| Token proxy: rtk (hooks into Claude Code) | No rtk equivalent — Codex-native levers (cached web search, model/effort switching) + distill |
+| Cross-model validation: ask Gemini or ChatGPT | Cross-model validation: ask Claude or Gemini |
+
+Each repo's appendix documents its own starter in full; the twin's changelog
+records the port and its verification. Improvements to the shared,
+agent-agnostic files are kept in sync between the two.
+
+---
+
+## Using both: Claude and Codex on one project
+
+The twin repos are not just parallel — they make the *same* project legible to
+both agents at once. That is worth doing for one reason above all:
+[hallucination orthogonality](#validate-physics-claims-with-a-second-model).
+The two models fail in different places, so their *disagreement* is a bug
+detector you cannot get from either alone. Here is how to run both on one
+project without the setup fighting itself.
+
+### One project, two agents
+
+The core documents need nothing: `workbook.tex`, `brief.tex`,
+`next-session-prompts.md`, the strategy map, and the research changelog are
+plain files both agents read and write identically. The agent-specific wiring
+takes three decisions:
+
+- **One instruction file, not two.** Do not maintain `CLAUDE.md` and `AGENTS.md`
+  as separate prose — they will drift, and the two agents will work from
+  different conventions. Make `AGENTS.md` the single source of truth and let
+  `CLAUDE.md` *import* it: Claude Code's memory files support `@path` imports,
+  so the whole of `CLAUDE.md` can be:
+
+  ```markdown
+  @AGENTS.md
+
+  <!-- Claude-specific notes only (e.g. "invoke skills as /name") go below. -->
+  ```
+
+  One file to maintain, both agents fully briefed.
+- **One skills folder.** Both agents use the same `SKILL.md` standard; only the
+  folder differs (`.claude/skills/` vs `.agents/skills/`). Keep one canonical
+  copy in `.agents/skills/` and link the other to it:
+
+  ```bash
+  ln -s ../.agents/skills .claude/skills
+  ```
+
+  Then verify both sides see them (type `/` in Claude Code; `/skills` in Codex).
+  If a symlink misbehaves on your platform, keep real copies and note in
+  AGENTS.md that `.agents/skills/` is canonical.
+- **One set of hook scripts.** Codex's hook events are schema-compatible with
+  Claude Code's, so the *same* shell scripts (pre-compact, promise-checker, the
+  pipeline guard) can be registered twice — once in `.claude/settings.json`,
+  once in `.codex/hooks.json` — and behave identically under both agents.
+
+And one traffic rule, non-negotiable: **one writer at a time.** Two agents
+editing the same files concurrently is a merge disaster with no referee. Commit
+before switching agents — git is the handover mechanism — and tell each agent
+about the other in the instruction file, so neither is surprised by commits it
+did not make.
+
+### The bridge: each agent can call the other
+
+Both CLIs are scriptable, and both agents can run shell commands — which means
+**each one can consult the other as a subprocess**, without you copy-pasting
+between two windows. The two commands that matter:
+
+```bash
+# From a Claude Code session — get Codex's independent answer (read-only, isolated):
+codex exec --sandbox read-only "State and check, from scratch: <the bare claim, with conventions>"
+
+# From a Codex session — get Claude's independent answer (print mode):
+claude -p "State and check, from scratch: <the bare claim>"
+```
+
+The starter's `/cross-validate` skill already formats a claim for exactly this
+(it can write the prompt to `/tmp/validation_prompt.txt`; pipe it with
+`codex exec --sandbox read-only "$(cat /tmp/validation_prompt.txt)"`). The one
+rule that keeps the check honest: **never include the first model's answer in
+the prompt.** You are comparing two independent derivations, not asking one
+model to grade a text it will be inclined to agree with.
+
+### Three patterns that work
+
+1. **Second opinion on a contested result.** The `/reality-check` /
+   `/cross-validate` flow, made frictionless: the moment a sign or normalisation
+   is disputed, ask the *other* model cold, in one shell command. Agreement →
+   proceed with confidence; disagreement → one of them is wrong, and the
+   discrepancy tells you where to look.
+2. **Cross-review of changes.** After one agent lands a substantial change, have
+   the other review it before you trust it:
+
+   ```bash
+   git diff HEAD~1 > /tmp/review.diff
+   codex exec --sandbox read-only "Review /tmp/review.diff for sign errors,
+   silent convention changes, and dropped factors. Report findings only — do
+   not rewrite."
+   ```
+
+   (or the mirror image with `claude -p`). This is the pipeline-auditor idea
+   with a second brain: the reviewer did not write the code, holds none of the
+   author's assumptions, and fails differently.
+3. **A standing second-opinion rule.** Add to the shared instruction file:
+
+   ```
+   ## Second opinions
+   For any contested formula, any result I question, or any claim you cannot
+   verify from the project documents, you may consult the other agent
+   (codex exec --sandbox read-only … / claude -p …) with a neutral prompt that
+   does NOT contain your answer. Report both answers verbatim — never silently
+   adopt either one.
+   ```
+
+### Honest caveats
+
+- **You are the referee.** Two models agreeing is evidence, not proof — they can
+  share a blind spot. Disagreement is the actionable signal; resolve it against
+  the source, not by majority vote.
+- **Keep the consultations read-only.** The bridge commands above are print-mode
+  and read-only-sandboxed on purpose: one agent should never edit the project
+  from inside another agent's session.
+- **Watch both meters.** A cross-check spends tokens on both plans; reserve the
+  bridge for load-bearing claims, not routine edits.
+- **Don't let them chat freely.** A long back-and-forth between two agreeable
+  models converges, it does not verify. Keep exchanges to one round —
+  question, independent answer, your judgment — and restate the
+  [anti-sycophancy rule](#claude-agrees-when-it-should-not) in both directions.
 
 ---
 
