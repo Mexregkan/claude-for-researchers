@@ -44,6 +44,10 @@ you are done with this step — do not read anything else in `handoff/`.
 
 - **Write with the helper, never by hand:** `bash handoff/hx.sh new <to> "<subject>"`,
   `reply <id>`, `close <id|slug>`. It writes the message *and* the `INBOX.md` row.
+- **Say which MODEL you are, not just which agent.** Prefix the command with
+  `HX_MODEL="<your model>"` (e.g. `HX_MODEL="Opus 5"`, `HX_MODEL="GPT-5.6-sol"`), or
+  fill the `MODEL:` line in the stub and run `bash handoff/hx.sh reindex`. "Claude
+  said X" is not enough six weeks later — Opus 5 and Haiku 4.5 are different witnesses.
 - **Never edit the other agent's message.** Reply instead — an edit in place is
   ambiguous and the other side may never notice it.
 - **40 lines max.** A message carries the verdict, the gates, the files you touched,

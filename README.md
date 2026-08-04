@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.08 · v1.10.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.08 · v1.11.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -2855,7 +2855,7 @@ starter/
 ├── handoff/                         ← (two agents — optional) the agent mailbox; skip if only one agent works the repo
 │   ├── README.md                   ← the protocol, read once
 │   ├── INBOX.md                    ← the index: the only file read at session start
-│   ├── hx.sh                       ← list | mine | new | reply | thread | close
+│   ├── hx.sh                       ← list | mine | new | reply | thread | close | reindex
 │   ├── msgs/                       ← open threads
 │   └── archive/                    ← settled threads (keep: the decision record)
 └── .claude/
@@ -3051,7 +3051,7 @@ handoff/
   INBOX.md    the index — the ONLY file read at session start
   msgs/       open threads
   archive/    settled threads (keep them: they are your decision record)
-  hx.sh       list | mine | new | reply | thread | close
+  hx.sh       list | mine | new | reply | thread | close | reindex
 ```
 
 **The index is the whole point.** `INBOX.md` is one row per thread — id, from →
@@ -3065,11 +3065,24 @@ to recall the format:
 ```bash
 bash handoff/hx.sh list                          # open threads
 bash handoff/hx.sh mine claude                   # …addressed to me
-bash handoff/hx.sh new codex "subject" [thread]  # message + index row
+HX_MODEL="Opus 5" \
+  bash handoff/hx.sh new codex "subject" [thread]  # message + index row
 bash handoff/hx.sh reply 2026-08-04-02           # same thread, sender/recipient swapped
 bash handoff/hx.sh thread <slug>                 # one thread, in order
 bash handoff/hx.sh close <id|slug>               # archive the thread, clear its rows
+bash handoff/hx.sh reindex                       # rebuild rows from the messages
 ```
+
+**Say which *model* you are, not just which agent.** A message is stamped
+`claude (Opus 5)` or `codex (GPT-5.6-sol)`, and the index row carries it too. This
+costs one environment variable and pays for itself the first time you reread a
+thread: "Codex said the sign was wrong" ages badly, because `gpt-5.6-sol` and
+`gpt-5.6-terra` are not the same witness — and neither are Opus 5 and Haiku 4.5.
+When two messages disagree, or a claim from six weeks ago turns out to be wrong,
+the model is half of *who said it*. Neither CLI exports its model name, so the
+agent has to state it: set `HX_MODEL` once per session, or fill the `MODEL:` line
+the stub leaves and run `hx.sh reindex`. An unstamped message shows up as `(?)` —
+visible, rather than quietly anonymous.
 
 Give `new` an explicit short thread name when the subject is long — the filename
 follows the *thread*, so the two can never drift apart. And one implementation
@@ -3083,9 +3096,9 @@ text, closing `z11` would have archived a live `delta-z11` thread with it. Found
 within the hour by the other agent — itself a decent advert for the cross-review
 pattern below.
 
-Messages carry fixed front matter (`ID / FROM / TO / SUBJECT / THREAD / STATUS /
-VERDICT`) and four short sections: **Claim**, **Gates**, **Touched**, **Needs from
-you**.
+Messages carry fixed front matter (`ID / FROM / MODEL / TO / SUBJECT / THREAD /
+STATUS / VERDICT`) and four short sections: **Claim**, **Gates**, **Touched**,
+**Needs from you**.
 
 #### The three rules that make it work
 

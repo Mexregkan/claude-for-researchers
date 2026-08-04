@@ -13,6 +13,25 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.08 · v1.11.0 — 2026-08-04 (update)
+
+### Added
+- **Mailbox messages now record which *model* wrote them.** A `MODEL:` front-matter
+  field, shown in the `INBOX.md` row and in `hx.sh list` / `thread` as
+  `claude (Opus 5)` / `codex (GPT-5.6-sol)`. "Codex said the sign was wrong" ages
+  badly: `gpt-5.6-sol` and `gpt-5.6-terra` are not the same witness, and neither are
+  Opus 5 and Haiku 4.5. When two messages disagree, or a six-week-old claim turns out
+  to be wrong, the model is half of *who said it*. Neither CLI exports its model name,
+  so it cannot be sniffed — set `HX_MODEL="Opus 5"` once per session, or fill the
+  `MODEL:` line the stub leaves you. An unstamped message shows as `(?)` rather than
+  passing as anonymous, and `hx.sh` says so at the point of writing.
+- **`hx.sh reindex`.** Rebuilds every open `INBOX.md` row from the messages themselves
+  — for after you fill in a `MODEL:` by hand, or any time the index and the messages
+  disagree. The messages win; the closed-threads table is left alone.
+  **Action needed (optional):** if you already copied `starter/handoff/`, re-copy
+  `hx.sh`, `README.md` and `INBOX.md` to get the model field. Existing messages
+  without a `MODEL:` line keep working — they just show as `(?)`.
+
 ## v2026.08 · v1.10.0 — 2026-08-04 (update)
 
 ### Added

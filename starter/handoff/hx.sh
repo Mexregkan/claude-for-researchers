@@ -7,14 +7,24 @@
 #   bash handoff/hx.sh reply <id> ["<subject>"]        reply in the same thread
 #   bash handoff/hx.sh thread <slug>                   list one thread
 #   bash handoff/hx.sh close <id|slug>                 archive a thread, mark CLOSED
+#   bash handoff/hx.sh reindex                         rebuild INBOX rows from front matter
+#
+# Say WHICH MODEL you are, not just which agent: HX_MODEL="Opus 5" hx.sh new ...
+# ("codex said X" ages badly -- gpt-5.6-sol and gpt-5.6-terra are not the same
+# witness, and neither are Opus 5 and Haiku 4.5.) Unset => the stub carries a
+# placeholder for you to fill, and the index row shows "?" until you reindex.
 # Portable: bash 3.2 (macOS), no GNU-only flags.
 
 set -u
+# Resolve our own path BEFORE cd-ing: $0 may be relative ("handoff/hx.sh"), and
+# after the cd a relative $0 no longer points at this file -- which used to break
+# the usage text for exactly the invocation the README documents.
+SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 cd "$(dirname "$0")"
 INBOX="INBOX.md"
 TODAY="$(date +%Y-%m-%d)"
 
-usage() { sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+usage() { sed -n '2,16p' "$SELF" | sed 's/^# \{0,1\}//'; exit 1; }
 
 # --- who am I talking to / as ------------------------------------------------
 # If the caller does not say, guess from the environment: Claude Code sets
@@ -23,6 +33,19 @@ whoami_agent() {
   if [ -n "${HX_FROM:-}" ]; then echo "$HX_FROM"
   elif [ -n "${CLAUDECODE:-}" ]; then echo "claude"
   else echo "codex"; fi
+}
+
+# --- which MODEL am I? --------------------------------------------------------
+# Neither CLI exports its model name, so this cannot be sniffed: either set
+# HX_MODEL, or fill the MODEL: line the stub leaves you. The agent knows what it
+# is running; nothing else in the repo does.
+PLACEHOLDER_MODEL='<your model, e.g. Opus 5 / GPT-5.6-sol -- fill this in>'
+whoami_model() {
+  if [ -n "${HX_MODEL:-}" ]; then echo "$HX_MODEL"; else echo "$PLACEHOLDER_MODEL"; fi
+}
+# what a MODEL: value looks like in a one-line index row ("?" while unfilled)
+model_label() {
+  case "${1:-}" in ""|"<"*) echo "?" ;; *) echo "$1" ;; esac
 }
 
 next_id() {
@@ -55,13 +78,12 @@ cmd_list() {
   echo "== open threads (handoff/msgs) =="
   if [ -z "$(ls msgs/*.md 2>/dev/null)" ]; then echo "  (none -- inbox clear)"; return; fi
   for f in msgs/*.md; do
-    id=$(basename "$f" | cut -d- -f1-4)
-    from=$(grep -m1 '^FROM:' "$f" | sed 's/^FROM: *//')
-    to=$(grep -m1 '^TO:' "$f" | sed 's/^TO: *//')
-    st=$(grep -m1 '^STATUS:' "$f" | sed 's/^STATUS: *//')
-    vd=$(grep -m1 '^VERDICT:' "$f" | sed 's/^VERDICT: *//')
-    sub=$(grep -m1 '^SUBJECT:' "$f" | sed 's/^SUBJECT: *//')
-    printf '  %s  %-6s -> %-6s  %-9s %-10s %s\n' "$id" "$from" "$to" "$st" "$vd" "$sub"
+    # read every field from the front matter -- never from the filename
+    id=$(field "$f" ID); from=$(field "$f" FROM); to=$(field "$f" TO)
+    st=$(field "$f" STATUS); vd=$(field "$f" VERDICT); sub=$(field "$f" SUBJECT)
+    md=$(model_label "$(field "$f" MODEL)")
+    printf '  %s  %-22s -> %-6s  %-9s %-10s %s\n' \
+      "$id" "$from ($md)" "$to" "$st" "$vd" "$sub"
   done
 }
 
@@ -81,10 +103,11 @@ cmd_mine() {
   return 0
 }
 
-write_stub() {  # $1=path $2=id $3=from $4=to $5=subject $6=thread-slug
+write_stub() {  # $1=path $2=id $3=from $4=to $5=subject $6=thread-slug $7=model
   cat > "$1" <<EOF
 ID: $2
 FROM: $3
+MODEL: $7
 TO: $4
 DATE: $TODAY
 SUBJECT: $5
@@ -107,8 +130,8 @@ VERDICT: <CONFIRMED|CORRECTED|REFUTED|FYI|ASK>
 EOF
 }
 
-add_row() {  # $1=id $2=from $3=to $4=subject -- insert ABOVE the HX:ROWS marker
-  row=$(printf '| %s | %s -> %s | OPEN | %s |' "$1" "$2" "$3" "$4")
+add_row() {  # $1=id $2=from $3=model $4=to $5=subject -- insert ABOVE the HX:ROWS marker
+  row=$(printf '| %s | %s (%s) -> %s | OPEN | %s |' "$1" "$2" "$(model_label "$3")" "$4" "$5")
   tmp=$(mktemp)
   # write BACK into INBOX.md rather than mv-ing the temp file over it: mktemp
   # creates mode 600, and a mv would silently make the index owner-only.
@@ -124,11 +147,21 @@ cmd_new() {
   # thread slug: explicit 3rd arg wins, else derived from the subject. The
   # filename is built from the THREAD slug so the two can never disagree.
   if [ -n "$th" ]; then slug=$(slugify "$th"); else slug=$(slugify "$sub"); fi
+  md=$(whoami_model)
   f="msgs/${id}-${from}-to-${to}-${slug}.md"
-  write_stub "$f" "$id" "$from" "$to" "$sub" "$slug"
-  add_row "$id" "$from" "$to" "$sub"
+  write_stub "$f" "$id" "$from" "$to" "$sub" "$slug" "$md"
+  add_row "$id" "$from" "$md" "$to" "$sub"
   echo "created $f"
   echo "  -> fill it in (40 lines max), then commit. INBOX.md row added."
+  warn_model
+}
+
+# nag once, at the point of writing, where it is cheap to fix
+warn_model() {
+  [ -n "${HX_MODEL:-}" ] && return 0
+  echo "  !! MODEL: is a placeholder -- say which model you are (e.g. Opus 5,"
+  echo "     GPT-5.6-sol), then run 'bash handoff/hx.sh reindex' to fix the row."
+  return 0
 }
 
 cmd_reply() {
@@ -140,11 +173,12 @@ cmd_reply() {
   to=$(field "$src" FROM)
   slug=$(field "$src" THREAD)
   [ -z "$sub" ] && sub="re: $(field "$src" SUBJECT)"
-  id=$(next_id)
+  id=$(next_id); md=$(whoami_model)
   f="msgs/${id}-${from}-to-${to}-${slug}.md"
-  write_stub "$f" "$id" "$from" "$to" "$sub" "$slug"
-  add_row "$id" "$from" "$to" "$sub"
+  write_stub "$f" "$id" "$from" "$to" "$sub" "$slug" "$md"
+  add_row "$id" "$from" "$md" "$to" "$sub"
   echo "created $f   (thread: $slug)"
+  warn_model
 }
 
 cmd_close() {
@@ -174,9 +208,28 @@ cmd_thread() {
   files=$(thread_files "$slug")
   [ -z "$files" ] && { echo "  (no open messages; check archive/)"; return 0; }
   for g in $files; do
-    printf '  %s  %-6s -> %-6s  %s\n' "$(field "$g" ID)" "$(field "$g" FROM)" \
+    printf '  %s  %-22s -> %-6s  %s\n' "$(field "$g" ID)" \
+      "$(field "$g" FROM) ($(model_label "$(field "$g" MODEL)"))" \
       "$(field "$g" TO)" "$(field "$g" SUBJECT)"
   done
+}
+
+# Rebuild every open row from the messages themselves. Run it after filling in a
+# MODEL: by hand, or any time you suspect the index and the messages disagree --
+# the messages win, always.
+cmd_reindex() {
+  tmp=$(mktemp)
+  grep -v '^| [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9] ' "$INBOX" > "$tmp" \
+    && cat "$tmp" > "$INBOX"
+  rm -f "$tmp"
+  n=0
+  for g in msgs/*.md; do
+    [ -e "$g" ] || continue
+    add_row "$(field "$g" ID)" "$(field "$g" FROM)" "$(field "$g" MODEL)" \
+            "$(field "$g" TO)" "$(field "$g" SUBJECT)"
+    n=$((n + 1))
+  done
+  echo "reindexed: $n open message(s); INBOX rows rebuilt from front matter."
 }
 
 case "${1:-list}" in
@@ -185,6 +238,7 @@ case "${1:-list}" in
   new)   shift; cmd_new "${1:-}" "${2:-}" "${3:-}" ;;
   reply) shift; cmd_reply "${1:-}" "${2:-}" ;;
   thread) shift; cmd_thread "${1:-}" ;;
+  reindex) cmd_reindex ;;
   close) shift; cmd_close "${1:-}" ;;
   *)     usage ;;
 esac
