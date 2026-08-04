@@ -110,7 +110,11 @@ EOF
 add_row() {  # $1=id $2=from $3=to $4=subject -- insert ABOVE the HX:ROWS marker
   row=$(printf '| %s | %s -> %s | OPEN | %s |' "$1" "$2" "$3" "$4")
   tmp=$(mktemp)
-  awk -v r="$row" '/^<!-- HX:ROWS/ { print r } { print }' "$INBOX" > "$tmp" && mv "$tmp" "$INBOX"
+  # write BACK into INBOX.md rather than mv-ing the temp file over it: mktemp
+  # creates mode 600, and a mv would silently make the index owner-only.
+  awk -v r="$row" '/^<!-- HX:ROWS/ { print r } { print }' "$INBOX" > "$tmp" \
+    && cat "$tmp" > "$INBOX"
+  rm -f "$tmp"
 }
 
 cmd_new() {
@@ -156,7 +160,8 @@ cmd_close() {
     sed -i '' 's/^STATUS: .*/STATUS: CLOSED/' "$g" 2>/dev/null || sed -i 's/^STATUS: .*/STATUS: CLOSED/' "$g"
     git mv "$g" archive/ 2>/dev/null || mv "$g" archive/
     # drop this message's row using its ID field, not a parsed filename
-    tmp=$(mktemp); grep -v "^| ${tid} " "$INBOX" > "$tmp" && mv "$tmp" "$INBOX"
+    tmp=$(mktemp); grep -v "^| ${tid} " "$INBOX" > "$tmp" && cat "$tmp" > "$INBOX"
+    rm -f "$tmp"
     n=$((n + 1))
   done
   echo "closed thread '$slug' ($n message(s) archived); all its INBOX rows removed."

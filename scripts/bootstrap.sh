@@ -101,6 +101,8 @@ yesno "Do you push to TWO git remotes (e.g. personal GitHub + institution GitLab
                                                             && DUALREMOTE=1 || DUALREMOTE=0
 yesno "Large / multi-branch project? (adds bigPicture.tex overview, strategy-map.md route plan, CHANGELOG.md result log)" n \
                                                             && BIGPROJECT=1 || BIGPROJECT=0
+yesno "Will a SECOND agent (e.g. Codex) also work in this repo? (adds handoff/, the agent mailbox)" n \
+                                                            && TWOAGENTS=1 || TWOAGENTS=0
 
 say ""
 say "Core files (universal — every project gets these):"
@@ -188,6 +190,24 @@ if [ "$DUALREMOTE" -eq 1 ]; then
     say "  -> dual remotes: edit scripts/git-push-both.sh (set your remotes + identities),"
     say "     then enable the PostToolUse mirror hook in .claude/settings.json"
     say "     (the exact block to paste is documented in that file)."
+fi
+
+# The agent mailbox. Gated on there actually being a second agent: with one agent
+# there is nobody to hand over to, and an empty inbox is just one more file to
+# explain. (Unlike the Pipeline workflow, this one is not inert when unused — the
+# protocol asks every session to read INBOX.md.)
+if [ "$TWOAGENTS" -eq 1 ]; then
+    mkdir -p handoff/msgs handoff/archive
+    [ -e handoff/msgs/.gitkeep ]    || : > handoff/msgs/.gitkeep
+    [ -e handoff/archive/.gitkeep ] || : > handoff/archive/.gitkeep
+    core starter/handoff/README.md handoff/README.md
+    core starter/handoff/INBOX.md  handoff/INBOX.md
+    core starter/handoff/hx.sh     handoff/hx.sh
+    chmod +x handoff/hx.sh 2>/dev/null
+    say "  -> agent mailbox: add this as step 1 of \"how to resume a session\" in the"
+    say "     instruction file BOTH agents read (CLAUDE.md, or AGENTS.md if you use one):"
+    say "     \"Check handoff/INBOX.md (~15 lines). Open a message only if its row is"
+    say "      OPEN and addressed to you; write with handoff/hx.sh, never by hand.\""
 fi
 
 if [ ! -d .git ]; then

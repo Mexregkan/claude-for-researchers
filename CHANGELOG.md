@@ -21,8 +21,8 @@ and did anything break?" Nothing has forced a major bump yet, so we are still on
   kit in `starter/handoff/`. The bridge pattern already in the guide is *synchronous*
   (one agent calls the other and waits); most two-agent work is asynchronous, and left
   alone it degenerates: handover notes pile up as ad-hoc files, both agents re-read all
-  of them every session, and eventually one agent "replies" by editing the other's note
-  in place, which the other never notices. The mailbox fixes all three: `INBOX.md` is an
+  of them every session, and the obvious way to "reply" is to edit the other's note in
+  place, which the other never notices. The mailbox fixes all three: `INBOX.md` is an
   index (one row per thread) and is the only file read at session start; `hx.sh` writes
   the message and the index row so neither agent has to recall the format; threads are
   archived, not deleted, because settled threads are the only record of *why* a decision
@@ -36,8 +36,19 @@ and did anything break?" Nothing has forced a major bump yet, so we are still on
   Wiring: make it step 1 of "how to resume a session" in `AGENTS.md` (which `CLAUDE.md`
   imports, so one edit briefs both agents), and put the cross-project convention in
   Codex's personal `~/.codex/AGENTS.md` so new projects inherit it.
+  `hx.sh` selects threads on the `THREAD:` front-matter field, never on the filename —
+  a filename glob both misses renamed messages (it archives nothing while reporting
+  success) and over-matches any slug that merely *ends* in the same text, so closing
+  `z11` would take a live `delta-z11` thread with it.
   If you already have a project set up with two agents, copy `starter/handoff/` into the
   project root and add the step-1 line to your instruction file.
+
+### Changed
+- **`scripts/bootstrap.sh` now offers the mailbox.** A new question — *"Will a SECOND
+  agent (e.g. Codex) also work in this repo?"*, default no — installs `starter/handoff/`
+  and prints the step-1 line to paste into your instruction file. Gated rather than
+  installed by default: unlike the Pipeline workflow, the mailbox is not inert when
+  unused, because the protocol asks every session to read `INBOX.md`.
 
 ## v2026.07 · v1.9.0 — 2026-07-30 (update)
 

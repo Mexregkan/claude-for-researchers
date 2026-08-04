@@ -3026,20 +3026,21 @@ did not make.
 
 ### The mailbox: how they hand work to each other
 
-The bridge above is *synchronous* — one agent calls the other and waits. But most
-two-agent work is asynchronous: you run Claude for an hour, hand over to Codex,
-come back to Claude tomorrow. Each session needs to know what the other one did,
-decided, and got wrong. Left to itself that turns into a mess, and the mess has a
-predictable shape:
+Most two-agent work is *asynchronous*: you run Claude for an hour, hand over to
+Codex, come back to Claude tomorrow. (The synchronous case — one agent calling
+the other and waiting — is the [bridge](#the-bridge-each-agent-can-call-the-other)
+below.) Each session needs to know what the other one did, decided, and got
+wrong. Left to itself that turns into a mess, and the mess has a predictable
+shape:
 
 - each agent drops a handover note as an ad-hoc file (`CODEX-NOTE-2026-08-04.md`,
   `CLAUDE-REPLY-*.md`) wherever it happens to be working;
-- the notes accumulate — we hit three in a single day, one of them 154 lines;
+- the notes accumulate — we hit three in a single day, of 245, 157 and 153 lines;
 - because there is no index, **both agents read all of them, every session**,
   forever;
-- and eventually one agent "replies" by *editing the other's note in place*,
-  which is ambiguous (correction? agreement? rebuttal?) and which the other side
-  may simply never notice.
+- and the obvious way to "reply" is to *edit the other's note in place*, which is
+  ambiguous (correction? agreement? rebuttal?) and which the other side may simply
+  never notice.
 
 The fix is small and worth doing as soon as you have two agents on one project: a
 folder that is explicitly a **mailbox**, with an index.
@@ -3075,9 +3076,12 @@ follows the *thread*, so the two can never drift apart. And one implementation
 note that is worth stealing: **the front matter is the source of truth, never the
 filename.** `close` and `thread` select on the `THREAD:` field and remove index
 rows by each message's `ID:` field. The first version of this script globbed
-filenames instead, and silently closed nothing the moment a thread was renamed —
-found within the hour by the other agent, which is itself a decent advert for the
-cross-review pattern above.
+filenames instead, and that failed in both directions: rename a message and
+`close` archived nothing while cheerfully printing *"all its INBOX rows
+removed"*; and since `*-<slug>.md` also matches any slug merely *ending* in that
+text, closing `z11` would have archived a live `delta-z11` thread with it. Found
+within the hour by the other agent — itself a decent advert for the cross-review
+pattern below.
 
 Messages carry fixed front matter (`ID / FROM / TO / SUBJECT / THREAD / STATUS /
 VERDICT`) and four short sections: **Claim**, **Gates**, **Touched**, **Needs from
@@ -3086,8 +3090,8 @@ you**.
 #### The three rules that make it work
 
 1. **Never edit the other agent's message.** Reply. `reply` reuses the thread
-   slug, so `ls msgs/ | grep <slug>` is the thread. An edit-in-place is invisible
-   unless the other side happens to diff the file.
+   slug, so `hx.sh thread <slug>` gives you the exchange in order. An
+   edit-in-place is invisible unless the other side happens to diff the file.
 2. **Cap messages at 40 lines.** Detail belongs in the workbook and the changelog
    — which you are maintaining anyway. The message carries the verdict, the
    evidence, what changed, and a pointer. If it is longer than 40 lines you are
@@ -3097,9 +3101,10 @@ you**.
    produced it.
 
    An agent computed a new quantity and reported the result with a confident
-   reliability argument: *"most importantly, 71 pre-existing exact values, not
-   used in the reconstruction, agree word-for-word. This independently confirms
-   the unexpected sign."* The check had genuinely been run and had genuinely
+   reliability argument (quoted with the project-specific nouns stripped):
+   *"most importantly, 71 pre-existing exact values, not used in the …
+   reconstruction, agree word-by-word …. This independently confirms the
+   unexpected sign."* The check had genuinely been run and had genuinely
    passed. It was also **completely irrelevant**: the disputed quantity was fed
    only by a specific class of terms, and not one of those 71 values belonged to
    it. Their contribution to the number in dispute was exactly zero.
@@ -3112,6 +3117,10 @@ you**.
    tested. Both were cheap to catch and neither was caught.
 
 #### Wiring it so both agents find it
+
+The kit is `starter/handoff/` — copy the folder into your project root, or answer
+yes to the second-agent question in [`scripts/bootstrap.sh`](scripts/bootstrap.sh).
+Then wire it in, which is the part that actually matters:
 
 Put the mailbox in the shared instruction file, not in a README nobody opens.
 Because `AGENTS.md` is the single source of truth and `CLAUDE.md` imports it
@@ -3132,10 +3141,10 @@ agent's message" — means new projects inherit the convention without setup.
 
 #### Caveats
 
-- **A mailbox is not a chat.** The same warning as the bridge applies more
-  strongly when the exchange is asynchronous and cheap: two agreeable models will
-  happily converge over five rounds without either verifying anything. Keep
-  threads short and close them.
+- **A mailbox is not a chat.** Two agreeable models will happily converge over
+  five rounds without either verifying anything — the same failure the bridge
+  has, made worse by an exchange that is asynchronous and cheap. Keep threads
+  short and close them.
 - **It does not replace the changelog.** The mailbox is *coordination* — who is
   doing what, what turned out wrong. Results still go in the workbook and the
   changelog, where they can be found by someone who was never party to the thread.
