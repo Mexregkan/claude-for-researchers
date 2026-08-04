@@ -13,6 +13,32 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.08 · v1.10.0 — 2026-08-04 (update)
+
+### Added
+- **The agent mailbox (`handoff/`).** A new subsection of *Using both: Claude and Codex
+  on one project* — **The mailbox: how they hand work to each other** — plus a ready-made
+  kit in `starter/handoff/`. The bridge pattern already in the guide is *synchronous*
+  (one agent calls the other and waits); most two-agent work is asynchronous, and left
+  alone it degenerates: handover notes pile up as ad-hoc files, both agents re-read all
+  of them every session, and eventually one agent "replies" by editing the other's note
+  in place, which the other never notices. The mailbox fixes all three: `INBOX.md` is an
+  index (one row per thread) and is the only file read at session start; `hx.sh` writes
+  the message and the index row so neither agent has to recall the format; threads are
+  archived, not deleted, because settled threads are the only record of *why* a decision
+  was reversed.
+  Three rules, each from a real failure: never edit the other agent's message (reply
+  instead); cap messages at 40 lines (detail belongs in the workbook and changelog); and
+  **state your gates including what they do not cover** — the section documents a case
+  where a 71-value exact check was cited as confirming a result while contributing
+  exactly zero to the quantity in dispute, and a second error of the same shape in the
+  same session. A gate whose scope is unstated is not evidence.
+  Wiring: make it step 1 of "how to resume a session" in `AGENTS.md` (which `CLAUDE.md`
+  imports, so one edit briefs both agents), and put the cross-project convention in
+  Codex's personal `~/.codex/AGENTS.md` so new projects inherit it.
+  If you already have a project set up with two agents, copy `starter/handoff/` into the
+  project root and add the step-1 line to your instruction file.
+
 ## v2026.07 · v1.9.0 — 2026-07-30 (update)
 
 ### Added

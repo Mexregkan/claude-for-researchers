@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.07 · v1.9.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.08 · v1.10.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -2852,6 +2852,12 @@ starter/
 │   └── git-push-both.sh             ← (opt-in) dual-remote push; enable via the PostToolUse hook
 ├── Pipeline/                        ← (pipeline workflow — optional) one map per big code; read README.md first
 │   └── README.md                   ← index of the codes and their pipeline docs
+├── handoff/                         ← (two agents — optional) the agent mailbox; skip if only one agent works the repo
+│   ├── README.md                   ← the protocol, read once
+│   ├── INBOX.md                    ← the index: the only file read at session start
+│   ├── hx.sh                       ← list | mine | new | reply | close
+│   ├── msgs/                       ← open threads
+│   └── archive/                    ← settled threads (keep: the decision record)
 └── .claude/
     ├── settings.json                ← permissions (allow routine · ask before dangerous) + hooks (mirror + pipeline-guard OFF by default)
     ├── hooks/
@@ -3017,6 +3023,128 @@ editing the same files concurrently is a merge disaster with no referee. Commit
 before switching agents — git is the handover mechanism — and tell each agent
 about the other in the instruction file, so neither is surprised by commits it
 did not make.
+
+### The mailbox: how they hand work to each other
+
+The bridge above is *synchronous* — one agent calls the other and waits. But most
+two-agent work is asynchronous: you run Claude for an hour, hand over to Codex,
+come back to Claude tomorrow. Each session needs to know what the other one did,
+decided, and got wrong. Left to itself that turns into a mess, and the mess has a
+predictable shape:
+
+- each agent drops a handover note as an ad-hoc file (`CODEX-NOTE-2026-08-04.md`,
+  `CLAUDE-REPLY-*.md`) wherever it happens to be working;
+- the notes accumulate — we hit three in a single day, one of them 154 lines;
+- because there is no index, **both agents read all of them, every session**,
+  forever;
+- and eventually one agent "replies" by *editing the other's note in place*,
+  which is ambiguous (correction? agreement? rebuttal?) and which the other side
+  may simply never notice.
+
+The fix is small and worth doing as soon as you have two agents on one project: a
+folder that is explicitly a **mailbox**, with an index.
+
+```
+handoff/
+  README.md   the protocol — read ONCE
+  INBOX.md    the index — the ONLY file read at session start
+  msgs/       open threads
+  archive/    settled threads (keep them: they are your decision record)
+  hx.sh       list | mine | new | reply | close
+```
+
+**The index is the whole point.** `INBOX.md` is one row per thread — id, from →
+to, status, subject. A session reads it (about fifteen lines) and stops there
+unless a row is `OPEN` and addressed to it. That is the difference between paying
+for every note ever written and paying for the one that concerns you.
+
+A helper script writes the message stub *and* the index row, so neither agent has
+to recall the format:
+
+```bash
+bash handoff/hx.sh list                          # open threads
+bash handoff/hx.sh mine claude                   # …addressed to me
+bash handoff/hx.sh new codex "subject" [thread]  # message + index row
+bash handoff/hx.sh reply 2026-08-04-02           # same thread, sender/recipient swapped
+bash handoff/hx.sh thread <slug>                 # one thread, in order
+bash handoff/hx.sh close <id|slug>               # archive the thread, clear its rows
+```
+
+Give `new` an explicit short thread name when the subject is long — the filename
+follows the *thread*, so the two can never drift apart. And one implementation
+note that is worth stealing: **the front matter is the source of truth, never the
+filename.** `close` and `thread` select on the `THREAD:` field and remove index
+rows by each message's `ID:` field. The first version of this script globbed
+filenames instead, and silently closed nothing the moment a thread was renamed —
+found within the hour by the other agent, which is itself a decent advert for the
+cross-review pattern above.
+
+Messages carry fixed front matter (`ID / FROM / TO / SUBJECT / THREAD / STATUS /
+VERDICT`) and four short sections: **Claim**, **Gates**, **Touched**, **Needs from
+you**.
+
+#### The three rules that make it work
+
+1. **Never edit the other agent's message.** Reply. `reply` reuses the thread
+   slug, so `ls msgs/ | grep <slug>` is the thread. An edit-in-place is invisible
+   unless the other side happens to diff the file.
+2. **Cap messages at 40 lines.** Detail belongs in the workbook and the changelog
+   — which you are maintaining anyway. The message carries the verdict, the
+   evidence, what changed, and a pointer. If it is longer than 40 lines you are
+   writing the workbook in the wrong place.
+3. **Every factual message states its *gates* — including what they do not
+   cover.** This is the one that earns its keep, so here is the real failure that
+   produced it.
+
+   An agent computed a new quantity and reported the result with a confident
+   reliability argument: *"most importantly, 71 pre-existing exact values, not
+   used in the reconstruction, agree word-for-word. This independently confirms
+   the unexpected sign."* The check had genuinely been run and had genuinely
+   passed. It was also **completely irrelevant**: the disputed quantity was fed
+   only by a specific class of terms, and not one of those 71 values belonged to
+   it. Their contribution to the number in dispute was exactly zero.
+
+   A gate whose *scope* is unstated is not evidence. Forcing a `Gates:` field that
+   asks "and what does this check not cover?" turns that from a thing you might
+   notice into a thing you have to write down. The same session produced a second
+   error of exactly the same shape — a law declared broken at a new data point,
+   when the version that had actually held at the old data points was never
+   tested. Both were cheap to catch and neither was caught.
+
+#### Wiring it so both agents find it
+
+Put the mailbox in the shared instruction file, not in a README nobody opens.
+Because `AGENTS.md` is the single source of truth and `CLAUDE.md` imports it
+([above](#one-project-two-agents)), one edit briefs both agents. Make it **step 1**
+of your "how to resume a session" list:
+
+```markdown
+1. **Check `handoff/INBOX.md`** (~15 lines). If a row is `OPEN` and addressed to
+   you, read that message first. If nothing is open, you are done with this step —
+   do not read anything else in `handoff/`.
+2. Read the branch task queue and do the top block.
+```
+
+Codex also supports a personal global `~/.codex/AGENTS.md` (the analogue of
+`~/.claude/CLAUDE.md`); a short cross-project note there — "if the repo has a
+`handoff/`, read `INBOX.md` first, write with `hx.sh`, never edit the other
+agent's message" — means new projects inherit the convention without setup.
+
+#### Caveats
+
+- **A mailbox is not a chat.** The same warning as the bridge applies more
+  strongly when the exchange is asynchronous and cheap: two agreeable models will
+  happily converge over five rounds without either verifying anything. Keep
+  threads short and close them.
+- **It does not replace the changelog.** The mailbox is *coordination* — who is
+  doing what, what turned out wrong. Results still go in the workbook and the
+  changelog, where they can be found by someone who was never party to the thread.
+- **Archive, do not delete.** The settled threads are the only record of *why* a
+  decision was reversed. Ours already contains two retractions that would
+  otherwise be invisible six months from now.
+- **It cannot enforce the traffic rule.** One writer at a time is still on you and
+  on git. What the mailbox adds is a place to say "I am about to touch
+  `workbook.tex`" before you do.
 
 ### The bridge: each agent can call the other
 
