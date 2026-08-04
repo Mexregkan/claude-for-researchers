@@ -43,6 +43,14 @@ and did anything break?" Nothing has forced a major bump yet, so we are still on
   If you already have a project set up with two agents, copy `starter/handoff/` into the
   project root and add the step-1 line to your instruction file.
 
+- **`starter/CLAUDE.md` carries the wiring.** A new *Handover to the other agent*
+  section makes checking `handoff/INBOX.md` step 1 of resuming a session, with the
+  message rules inline — so the mailbox is briefed where the agent actually reads,
+  not in a README nobody opens. If both agents share one instruction file
+  (`AGENTS.md` with `CLAUDE.md` importing it), move that section there and one edit
+  briefs both. **Action needed (optional):** delete the section if only one agent
+  works in your repo.
+
 ### Changed
 - **`scripts/bootstrap.sh` now offers the mailbox.** A new question — *"Will a SECOND
   agent (e.g. Codex) also work in this repo?"*, default no — installs `starter/handoff/`

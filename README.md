@@ -2855,7 +2855,7 @@ starter/
 ├── handoff/                         ← (two agents — optional) the agent mailbox; skip if only one agent works the repo
 │   ├── README.md                   ← the protocol, read once
 │   ├── INBOX.md                    ← the index: the only file read at session start
-│   ├── hx.sh                       ← list | mine | new | reply | close
+│   ├── hx.sh                       ← list | mine | new | reply | thread | close
 │   ├── msgs/                       ← open threads
 │   └── archive/                    ← settled threads (keep: the decision record)
 └── .claude/
@@ -3051,7 +3051,7 @@ handoff/
   INBOX.md    the index — the ONLY file read at session start
   msgs/       open threads
   archive/    settled threads (keep them: they are your decision record)
-  hx.sh       list | mine | new | reply | close
+  hx.sh       list | mine | new | reply | thread | close
 ```
 
 **The index is the whole point.** `INBOX.md` is one row per thread — id, from →
@@ -3120,7 +3120,9 @@ you**.
 
 The kit is `starter/handoff/` — copy the folder into your project root, or answer
 yes to the second-agent question in [`scripts/bootstrap.sh`](scripts/bootstrap.sh).
-Then wire it in, which is the part that actually matters:
+[`starter/CLAUDE.md`](starter/CLAUDE.md) already carries the wiring as a
+**Handover to the other agent** section (delete it if only one agent works in your
+repo). Wiring is the part that actually matters:
 
 Put the mailbox in the shared instruction file, not in a README nobody opens.
 Because `AGENTS.md` is the single source of truth and `CLAUDE.md` imports it

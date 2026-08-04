@@ -204,10 +204,13 @@ if [ "$TWOAGENTS" -eq 1 ]; then
     core starter/handoff/INBOX.md  handoff/INBOX.md
     core starter/handoff/hx.sh     handoff/hx.sh
     chmod +x handoff/hx.sh 2>/dev/null
-    say "  -> agent mailbox: add this as step 1 of \"how to resume a session\" in the"
-    say "     instruction file BOTH agents read (CLAUDE.md, or AGENTS.md if you use one):"
-    say "     \"Check handoff/INBOX.md (~15 lines). Open a message only if its row is"
-    say "      OPEN and addressed to you; write with handoff/hx.sh, never by hand.\""
+    say "  -> agent mailbox: CLAUDE.md already carries the \"Handover to the other agent\""
+    say "     section — keep it. If both agents share one instruction file (AGENTS.md with"
+    say "     CLAUDE.md importing it), move that section there so one edit briefs both."
+else
+    say ""
+    say "  note: CLAUDE.md carries a \"Handover to the other agent\" section for the"
+    say "        two-agent mailbox. Delete it — you said only one agent works here."
 fi
 
 if [ ! -d .git ]; then

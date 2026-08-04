@@ -30,6 +30,28 @@ domain as a function of their spectral parameters, using the Rankin–Selberg un
   Everyone pulls results into the shared brief.tex.*
 - **next-session-prompts.md** — task log. Top section = next task; bottom = DONE log.
 - **numerics/** — computation scripts. `README.md` inside explains each file.
+- **handoff/** — the mailbox shared with the other agent. `INBOX.md` is the index;
+  it is the ONLY file here you read at session start. Delete this line (and the
+  "Handover" section below) if only one agent works in this repo.
+
+## Handover to the other agent (ONLY if a second agent — e.g. Codex — also works here)
+<!-- Delete this whole section if this repo has one agent. If you keep it, this is
+     step 1 of resuming a session — before brief.tex, before the task log. -->
+
+**Before anything else, read `handoff/INBOX.md`** (~15 lines, one row per thread).
+Open a message only if its row is `OPEN` and addressed to you. If nothing is open,
+you are done with this step — do not read anything else in `handoff/`.
+
+- **Write with the helper, never by hand:** `bash handoff/hx.sh new <to> "<subject>"`,
+  `reply <id>`, `close <id|slug>`. It writes the message *and* the `INBOX.md` row.
+- **Never edit the other agent's message.** Reply instead — an edit in place is
+  ambiguous and the other side may never notice it.
+- **40 lines max.** A message carries the verdict, the gates, the files you touched,
+  and what you need — not a derivation. Detail belongs in workbook.tex / CHANGELOG.md.
+- **State what your checks do NOT cover.** A gate whose scope is unstated is not
+  evidence; this is the failure the `## Gates` section exists to catch.
+- One writer at a time: commit before handing over. Git is the handover mechanism.
+- Full protocol: `handoff/README.md` (read it once, not every session).
 
 ## Conventions
 <!-- Notation Claude must get right. Be precise about signs, normalizations, definitions. -->
