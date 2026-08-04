@@ -5,3 +5,6 @@ __pycache__/
 
 # Private project instructions — local only, never ship
 CLAUDE.md
+
+# Talk / presentation working files — local only, never push to any remote
+/presentation/
