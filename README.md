@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.08 · v1.11.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.08 · v1.12.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -2855,7 +2855,7 @@ starter/
 ├── handoff/                         ← (two agents — optional) the agent mailbox; skip if only one agent works the repo
 │   ├── README.md                   ← the protocol, read once
 │   ├── INBOX.md                    ← the index: the only file read at session start
-│   ├── hx.sh                       ← list | mine | new | reply | thread | close | reindex
+│   ├── hx.sh                       ← list | mine | new | reply | thread | close | lint
 │   ├── msgs/                       ← open threads
 │   └── archive/                    ← settled threads (keep: the decision record)
 └── .claude/
@@ -3051,7 +3051,7 @@ handoff/
   INBOX.md    the index — the ONLY file read at session start
   msgs/       open threads
   archive/    settled threads (keep them: they are your decision record)
-  hx.sh       list | mine | new | reply | thread | close | reindex
+  hx.sh       list | mine | new | reply | thread | close | lint
 ```
 
 **The index is the whole point.** `INBOX.md` is one row per thread — id, from →
@@ -3063,28 +3063,54 @@ A helper script writes the message stub *and* the index row, so neither agent ha
 to recall the format:
 
 ```bash
-bash handoff/hx.sh list                          # open threads
-bash handoff/hx.sh mine claude                   # …addressed to me
-HX_MODEL="Opus 5" \
-  bash handoff/hx.sh new codex "subject" [thread]  # message + index row
-bash handoff/hx.sh reply 2026-08-04-02           # same thread, sender/recipient swapped
-bash handoff/hx.sh thread <slug>                 # one thread, in order
-bash handoff/hx.sh close <id|slug>               # archive the thread, clear its rows
-bash handoff/hx.sh reindex                       # rebuild rows from the messages
+bash handoff/hx.sh list                              # open threads
+bash handoff/hx.sh mine claude                       # …addressed to me
+bash handoff/hx.sh new codex "subject" -b body.md    # message + index row
+bash handoff/hx.sh reply 2026-08-04-02 -b body.md    # same thread, sender/recipient swapped
+bash handoff/hx.sh thread <slug>                     # one thread, in order
+bash handoff/hx.sh close <id|slug>                   # archive the thread, clear its rows
+bash handoff/hx.sh lint                              # fail on stubs and oversized messages
 ```
 
-**Say which *model* you are, not just which agent.** A message is stamped
-`claude (Opus 5)` or `codex (GPT-5.6-sol)`, and the index row carries it too. This
-costs one environment variable and pays for itself the first time you reread a
-thread: "Codex said the sign was wrong" ages badly, because `gpt-5.6-sol` and
-`gpt-5.6-terra` are not the same witness — and neither are Opus 5 and Haiku 4.5.
-When two messages disagree, or a claim from six weeks ago turns out to be wrong,
-the model is half of *who said it*. Neither CLI exports its model name, so the
-agent has to state it: set `HX_MODEL` once per session, or fill the `MODEL:` line
-the stub leaves and run `hx.sh reindex`. An unstamped message shows up as `(?)` —
-visible, rather than quietly anonymous.
+**Say which *model* you are, not just which agent.** `claude` and `codex` name
+the *CLI*, not the thing that did the reasoning, so every sender and recipient is
+written `claude (Opus 5)`, `codex (ChatGPT Sol 5.6)` — in the message and in the
+index row. "Codex said the sign was wrong" ages badly, because two releases of
+the same CLI are not the same witness, and neither are Opus 5 and Haiku 4.5. When
+two messages disagree, or a claim from six weeks ago turns out to be wrong, the
+model is half of *who said it*.
 
-Give `new` an explicit short thread name when the subject is long — the filename
+The mechanism is worth copying: the **first word is the routing key**, and the
+parenthesised model is for humans. `mine`, replies, filenames and archiving all
+match on the key, so you still type `hx.sh new codex "…"` and filenames stay
+short. Both model strings live in two variables at the top of the script — one
+place to edit when you switch model, and nobody ever hand-types an identity into
+a message.
+
+#### A body is mandatory, and `lint` is the backstop
+
+The single most useful hardening came from a real incident: a body file was
+passed as a bare extra argument, the script *silently ignored it*, and the
+message went out as an empty template. The other agent opened a blank form and
+the thread stalled. Three changes came out of that, and they generalise to any
+agent-facing tool:
+
+- **Refuse to do the useless thing.** `hx.sh` will not create a body-less
+  message. You write the body to a file and pass `-b <file>`; `--stub` is the
+  explicit opt-in to an empty template.
+- **Never silently ignore an argument.** Any unrecognised or extra argument is a
+  hard error. Silent tolerance is what turned a typo into a blank message.
+- **Add a linter, and run it from a hook.** `hx.sh lint` fails on unfilled
+  placeholders, on a body under six content lines, and over the line cap; the
+  starter's Stop hook runs it so a forgotten stub is caught at session end.
+
+One detail from writing that linter is worth stealing. The obvious rule for "is
+this still a template?" — *does the line start with `<`* — flags real physics:
+bra-ket notation like `<e1|M|v>`, and every `<=`. It marked three good messages
+as stubs on the first run. The fix is to match the placeholder lines as **exact
+fixed strings** taken from the template itself, which cannot collide with prose.
+
+Give `new` an explicit short thread name with `-t` when the subject is long — the filename
 follows the *thread*, so the two can never drift apart. And one implementation
 note that is worth stealing: **the front matter is the source of truth, never the
 filename.** `close` and `thread` select on the `THREAD:` field and remove index
@@ -3096,19 +3122,22 @@ text, closing `z11` would have archived a live `delta-z11` thread with it. Found
 within the hour by the other agent — itself a decent advert for the cross-review
 pattern below.
 
-Messages carry fixed front matter (`ID / FROM / MODEL / TO / SUBJECT / THREAD /
-STATUS / VERDICT`) and four short sections: **Claim**, **Gates**, **Touched**,
-**Needs from you**.
+Messages carry fixed front matter (`ID / FROM / TO / DATE / SUBJECT / THREAD /
+STATUS`), then a `VERDICT:` line and four short sections: **Claim**, **Gates**,
+**Touched**, **Needs from you**.
 
 #### The three rules that make it work
 
 1. **Never edit the other agent's message.** Reply. `reply` reuses the thread
    slug, so `hx.sh thread <slug>` gives you the exchange in order. An
    edit-in-place is invisible unless the other side happens to diff the file.
-2. **Cap messages at 40 lines.** Detail belongs in the workbook and the changelog
-   — which you are maintaining anyway. The message carries the verdict, the
-   evidence, what changed, and a pointer. If it is longer than 40 lines you are
-   writing the workbook in the wrong place.
+2. **Cap the length.** Detail belongs in the workbook and the changelog — which
+   you are maintaining anyway. The message carries the verdict, the evidence,
+   what changed, and a pointer, not a derivation. Ours started at 40 lines and
+   was raised twice under real use, to 100; the cap exists to stop a message
+   becoming a write-up, not to squeeze out substance, so if the gates and their
+   limitations need the room, take it — and raise the number rather than cutting
+   the honest part.
 3. **Every factual message states its *gates* — including what they do not
    cover.** This is the one that earns its keep, so here is the real failure that
    produced it.

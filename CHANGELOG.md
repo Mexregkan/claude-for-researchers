@@ -13,6 +13,55 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.08 · v1.12.0 — 2026-08-09 (update)
+
+### Changed
+- **Mailbox: a message body is now mandatory, and `hx.sh lint` is the backstop.** From
+  real use — a body file passed as a bare extra argument was *silently ignored* and the
+  message went out as an empty template, so the other agent opened a blank form and the
+  thread stalled. Three fixes, all worth copying into any agent-facing tool: `hx.sh`
+  refuses to create a body-less message (`-b <file>` supplies it, `--stub` is the
+  explicit opt-in to a template); any unknown or extra argument is a **hard error**
+  instead of being dropped; and `hx.sh lint` fails on unfilled placeholders, a body
+  under six content lines, or a message over the cap. The starter's Stop hook
+  (`promise-checker.sh`) runs the lint, so a forgotten stub is caught at session end.
+  A detail from writing the linter that generalises: "does the line start with `<`" is
+  the obvious stub test and it is wrong — it flags bra-ket notation like `<e1|M|v>` and
+  every `<=`. Placeholders are matched as exact fixed strings from the template instead.
+- **The model now lives in the identity, not a separate field.** `FROM:`/`TO:` read
+  `claude (Opus 5)` / `codex (ChatGPT Sol 5.6)`. The first word is the routing key
+  (`mine`, replies, filenames and archiving all match on it); the parenthesised model is
+  for humans. Both strings are two variables at the top of `hx.sh` — one place to edit
+  when you switch model, and no one ever hand-types an identity. This replaces the
+  per-message `MODEL:` field, `HX_MODEL` and `hx.sh reindex` from the previous release:
+  same goal, no per-message bookkeeping and nothing to leave unfilled.
+- **The line cap is now 100** (`MAXLINES` in `hx.sh`), raised twice under real use after
+  rounds of genuine content had to be squeezed to fit. The cap exists to stop a message
+  becoming a write-up, not to force compression of substance — if the gates and their
+  limitations need the room, take it.
+
+### Fixed
+- **`-b` paths now resolve against your own directory.** `hx.sh` cd's into `handoff/` at
+  startup, so a relative `-b body.md` written from the repo root was looked up inside
+  `handoff/` — failing confusingly, or picking up a same-named file that happened to live
+  there. (Same root cause as the earlier `$0` usage-text bug.)
+- **The Stop hook no longer skips the mailbox check.** It returned early whenever the last
+  assistant turn could not be parsed, which also skipped the handoff lint — a check that
+  does not depend on the transcript at all. It also reported only the first of the two
+  findings; a promise-checker hit no longer masks a pending stub.
+- `hx.sh list` reads the front matter rather than parsing the filename, and `thread`
+  column widths fit the longer identities. `INBOX.md` keeps its file mode when rewritten.
+
+**Action needed (optional):** re-copy `starter/handoff/` and
+`starter/.claude/hooks/promise-checker.sh`. The command signature changed — `new`/`reply`
+now require `-b <bodyfile>`, `-t` replaces the bare third argument for a thread slug, and
+`reindex` is gone — so if your instruction file documents the old form, update it (the
+starter's *Handover to the other agent* section is already updated). Existing messages
+keep working; identities without a model just display as written.
+
+Mirrored in the ChatGPT/Codex twin (`chatgpt-for-researchers` v1.4.0); the `handoff/`
+kit stays byte-identical between the two repos.
+
 ## v2026.08 · v1.11.0 — 2026-08-04 (update)
 
 ### Added

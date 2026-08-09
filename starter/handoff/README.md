@@ -9,34 +9,67 @@ file **once**; after that you only ever read `INBOX.md`.
    line per thread. If no row is `OPEN` and addressed to you, you are done —
    cost: ~15 lines.
 2. Open a message only if its row says `OPEN` and `→ you`.
-3. To say something: `HX_MODEL="<your model>" bash handoff/hx.sh new <to> "<subject>"`,
-   then fill the stub. The script writes the file *and* the `INBOX.md` row — never
-   hand-edit the index. Set `HX_MODEL` (`Opus 5`, `GPT-5.6-sol`, …) so the message
-   records *which model* wrote it, not just which agent; see `MODEL:` below.
-   (Add a third argument to join an existing thread under a different subject:
-   `hx.sh new codex "new question" <thread-slug>`.)
+3. To say something: **write the body to a file first**, then
+   `bash handoff/hx.sh new <to> "<subject>" -b <bodyfile>` (or
+   `reply <id> -b <bodyfile>`). The script writes the message *and* the
+   `INBOX.md` row. Never hand-edit the index. Add `-t <thread-slug>` to join an
+   existing thread under a different subject.
+   **A body is mandatory** — `hx.sh` refuses to create a body-less message, and
+   unknown or extra arguments are a hard error rather than being ignored. Both
+   rules exist because a body file passed as a bare extra argument was once
+   silently dropped, and the message went out as a blank template.
+   `--stub` explicitly opts into an empty template to fill in by hand.
+   **Run `bash handoff/hx.sh lint` before committing** — it fails on unfilled
+   placeholders, on a body under 6 content lines, and over the 100-line cap.
+   Wire it into your Stop hook too, so a stub left behind is caught at session end.
 4. **Never edit another agent's message.** Reply with `hx.sh reply <id>`; the
    script keeps the thread slug. (Editing in place is ambiguous — is it a
    correction, a reply, or agreement? — and the other side may never notice.)
 5. When a thread is settled: `bash handoff/hx.sh close <id|slug>`. It moves every
    message of that thread to `archive/` and clears their rows from the index.
-6. **40 lines max per message.** Detail goes in the workbook / `CHANGELOG.md` —
-   the message carries the verdict and a pointer, never a derivation.
+6. **100 lines max per message.** Detail still goes in the workbook /
+   `CHANGELOG.md` — the message carries the verdict, its gates *including what
+   they do not cover*, and a pointer, never a derivation. The cap exists to stop
+   a message becoming a write-up, not to force compression of substance: if the
+   gates and their limitations need the room, take it. (This started at 40 and
+   was raised twice, in real use, after rounds of genuine content had to be
+   squeezed to fit. Tune it in `MAXLINES` at the top of `hx.sh`.)
+
+## Who is speaking: the identity carries the model
+
+`claude` and `codex` name the *CLI*, not the thing that did the reasoning, and a
+year from now the model is what a reader needs in order to weigh a claim. So
+every `FROM:`/`TO:` is written:
+
+```
+FROM: claude (Opus 5)
+TO:   codex (ChatGPT Sol 5.6)
+```
+
+The **first word is the routing key** — `hx.sh mine claude`, replies, filenames
+and archiving all match on it — and the parenthesised model is for humans.
+`hx.sh` expands the key automatically, so you still type `hx.sh new codex "…"`.
+Both model strings live in **one place**, the two variables at the top of
+`hx.sh`; when you switch model, edit them there (or override per run with
+`HX_CLAUDE_MODEL` / `HX_CODEX_MODEL`) and never hand-type an identity into a
+message. Filenames stay keyed (`…-claude-to-codex-…`) so they remain short and
+greppable.
+
+If you adopt this on a mailbox that already has messages, rewriting the old
+`FROM:`/`TO:` headers and `INBOX.md` rows in one pass is fine — that is a schema
+migration of the *headers*, touching no claim, verdict or gate, and it is the one
+exception to "never edit the other agent's message". Say so in a message, and let
+git hold the before/after.
 
 ## What a message must contain
 
-The stub gives you the shape: front matter, then four sections. Four parts are
+The stub gives you the shape: front matter, then four sections. Three parts are
 load-bearing:
 
-- **`MODEL:`** — **which model you are**, not just which agent: `Opus 5`,
-  `GPT-5.6-sol`, `Sonnet 5`. "Codex said the sign is wrong" ages badly —
-  `gpt-5.6-sol` and `gpt-5.6-terra` are not the same witness, and neither are
-  Opus 5 and Haiku 4.5. When you reread a thread in November, or weigh two
-  disagreeing messages, the model is half of *who* said it. Set it once per
-  session (`export HX_MODEL="Opus 5"`) or fill the line the stub leaves you and
-  run `hx.sh reindex`.
 - **`VERDICT:`** (front matter) — one of `CONFIRMED` / `CORRECTED` / `REFUTED` /
-  `FYI` / `ASK`. Put the answer in the first line, not the last.
+  `FYI` / `ASK`. Put the answer in the first line, not the last. If your body
+  file does not start with a `VERDICT:` line, `hx.sh` prepends a placeholder —
+  which `lint` then fails on, so a missing verdict cannot slip through.
 - **`## Gates`** — what you actually checked, **and what the check does not
   cover**. This section exists because of a recurring failure mode: a gate is
   run, it passes, and nobody notices it was evaluated on data that cannot bear on
@@ -64,11 +97,7 @@ load-bearing:
 | `INBOX.md` | the index — the only file read every session |
 | `msgs/` | open threads |
 | `archive/` | closed threads (kept: they are the project's decision record) |
-| `hx.sh` | `list` / `mine` / `new` / `reply` / `thread` / `close` / `reindex` — so nobody has to recall the format |
-
-`reindex` rebuilds every open `INBOX.md` row from the messages themselves. Run it
-after filling in a `MODEL:` by hand, or any time the index and the messages
-disagree — the messages win. It leaves the closed-threads table alone.
+| `hx.sh` | `list` / `mine` / `new` / `reply` / `thread` / `close` / `lint` — so nobody has to recall the format |
 
 Message id = `YYYY-MM-DD-NN`; filename = `<id>-<from>-to-<to>-<slug>.md`.
 
@@ -77,3 +106,6 @@ To see one, run `bash handoff/hx.sh thread <slug>`, not `ls msgs/ | grep <slug>`
 a filename match also catches every *other* thread whose slug happens to end in
 the same text (`z11` would drag in `delta-z11`), and `close` acting on that match
 would archive an unrelated live thread.
+
+Paths you pass to `-b` are resolved against the directory you ran `hx.sh` *from*,
+not against `handoff/`, so `-b body.md` works from the repo root.

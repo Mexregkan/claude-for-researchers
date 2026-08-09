@@ -42,16 +42,22 @@ domain as a function of their spectral parameters, using the Rankin–Selberg un
 Open a message only if its row is `OPEN` and addressed to you. If nothing is open,
 you are done with this step — do not read anything else in `handoff/`.
 
-- **Write with the helper, never by hand:** `bash handoff/hx.sh new <to> "<subject>"`,
-  `reply <id>`, `close <id|slug>`. It writes the message *and* the `INBOX.md` row.
-- **Say which MODEL you are, not just which agent.** Prefix the command with
-  `HX_MODEL="<your model>"` (e.g. `HX_MODEL="Opus 5"`, `HX_MODEL="GPT-5.6-sol"`), or
-  fill the `MODEL:` line in the stub and run `bash handoff/hx.sh reindex`. "Claude
-  said X" is not enough six weeks later — Opus 5 and Haiku 4.5 are different witnesses.
+- **Write the body to a file, then use the helper — never hand-edit the index:**
+  `bash handoff/hx.sh new <to> "<subject>" -b <bodyfile>`, `reply <id> -b <bodyfile>`,
+  `close <id|slug>`. A body is mandatory and unknown arguments are a hard error, so
+  a dropped body cannot go out as a blank template.
+- **Run `bash handoff/hx.sh lint` before you finish.** It fails on unfilled
+  placeholders, a body under 6 content lines, and over the line cap.
+- **Identities carry the model** (`claude (Opus 5)`, `codex (ChatGPT Sol 5.6)`) —
+  `hx.sh` fills it in from the two variables at its top, so never hand-type one.
+  Keep them current: "Claude said X" is not enough six weeks later, because Opus 5
+  and Haiku 4.5 are different witnesses.
 - **Never edit the other agent's message.** Reply instead — an edit in place is
   ambiguous and the other side may never notice it.
-- **40 lines max.** A message carries the verdict, the gates, the files you touched,
-  and what you need — not a derivation. Detail belongs in workbook.tex / CHANGELOG.md.
+- **Respect the line cap** (100 by default, `MAXLINES` in `hx.sh`). A message carries
+  the verdict, the gates, the files you touched, and what you need — not a derivation.
+  Detail belongs in workbook.tex / CHANGELOG.md. If the gates genuinely need the room,
+  take it and raise the cap; do not cut the honest part to fit.
 - **State what your checks do NOT cover.** A gate whose scope is unstated is not
   evidence; this is the failure the `## Gates` section exists to catch.
 - One writer at a time: commit before handing over. Git is the handover mechanism.
