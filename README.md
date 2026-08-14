@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.08 · v1.13.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.08 · v1.14.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -383,15 +383,15 @@ them after setup is complete. Point it at a file or a whole directory and it wil
 convert everything to Wolfbook's `.wb` format in one step — re-run the cells
 afterwards to regenerate output.
 
-**Why the install commands prompt (once).** The `settings.json` Claude just wrote
-allows ordinary commands to run freely and asks before anything dangerous (`rm`,
-`mv`, `git reset --hard`, `sudo`, …) — it blocks nothing outright, so you stay in
-control without ever being stuck. That is the behaviour you want: Claude runs LaTeX,
-Python, and git without interrupting you, and only pauses before something risky.
-But Claude Code reads `settings.json` once, at session start, so it does not take
-effect until your *next* session. That is why the four install commands in this very
-first session ask for permission. Approve them; from the next session on, routine
-commands won't prompt you again.
+**Why the install commands may prompt (once).** The `settings.json` Claude just
+wrote asks before anything dangerous (`rm`, `mv`, `git reset --hard`, …) and blocks
+edits to files you mark as irreplaceable, so you stay in control without ever being
+stuck. Claude Code reads `settings.json` once, at session start, so it does not take
+effect until your *next* session — which is why these install commands can ask for
+permission in this very first session. Approve them. How much you are prompted from
+here on depends on your [permission mode](#permissions): in **auto mode**, the
+default since August 2026, routine commands run without prompting and a classifier
+vets them instead; in Manual mode you approve each one.
 
 This works because Claude Code can read a GitHub repository, run shell commands, and
 write files, and because the guide it is reading contains explicit templates and
@@ -1675,8 +1675,10 @@ a single line has moved.
 ### How to turn it on
 
 Press **Shift+Tab** to cycle the mode indicator at the bottom of the input box:
-normal → auto-accept edits → **plan mode**. (You can also start a session already
-in it with `claude --permission-mode plan`.) Then work as usual: ask your question
+Manual → accept edits → **plan mode** (with auto mode last, if your account has
+it — see [Permissions](#permissions)). You can also start a session already in it
+with `claude --permission-mode plan`. In the VS Code extension, pick it from the
+mode indicator instead. Then work as usual: ask your question
 or describe the change. Claude reads and researches, then presents a plan and asks
 for approval. Approve it and Claude leaves plan mode and executes; reject it and
 you refine the instructions with nothing lost and nothing to undo. Press Shift+Tab
@@ -2344,60 +2346,115 @@ that fire automatically at specific events).
 ### Permissions
 
 Every time Claude wants to run a shell command (compile LaTeX, run a Python script,
-run git), it either runs automatically or asks for your approval, depending on
-permissions. By default, Claude asks for most things.
+run git), it either runs automatically or asks for your approval. Two things decide
+which: the **permission mode**, which sets the baseline for the whole session, and
+the **permission rules** in `settings.json`, which override that baseline for
+specific patterns. Modes changed substantially in August 2026, so start there.
 
-For a research project, constantly approving routine commands (compile, git status,
-run the computation script) is friction that adds up. The permissions block in
-`settings.json` lets you pre-approve what Claude can run.
+#### Auto mode is now the default
 
-The most practical approach for research is **allow everything by default, and
-*ask* before anything dangerous — block nothing outright**. Precedence is
-`deny` > `ask` > `allow`, so a command listed under `ask` still prompts even though
-`allow` also matches it. The `deny` list is left empty: nothing is ever hard-blocked,
-because a hard block is more annoying than useful — the moment you legitimately need
-a denied command you have to stop and edit `settings.json` mid-session. With `ask`,
-Claude simply pauses and you say "yes, this one" (or no) in the moment.
+Since **14 August 2026**, new sessions on Pro, Max, and Team plans start in **auto
+mode**. Instead of prompting you, Claude routes each action through a separate
+classifier model that reviews it before it runs, blocking anything that escalates
+beyond what you asked for, targets infrastructure it does not recognise, or looks
+driven by hostile content Claude just read. What it blocks by default includes
+downloading and executing code (`curl | bash`), sending sensitive data to external
+endpoints, production deploys and migrations, force pushes, granting permissions,
+and irreversibly destroying files that existed before the session started. It
+trusts your working directory and the git remotes that were configured when the
+session began — a remote added mid-session is not trusted. After three consecutive
+blocks, or twenty in a session, it falls back to asking you.
+
+The full list of modes:
+
+| Mode | What runs without asking | Best for |
+|------|--------------------------|----------|
+| `default` (shown as **Manual**) | Reads only | Sensitive work, getting started |
+| `acceptEdits` | Reads, file edits, common filesystem commands | Iterating on code you are reviewing |
+| `plan` | Reads, plus classifier-approved commands | [Investigating before editing](#plan-mode-investigate-before-you-edit) |
+| `auto` | Everything, with background safety checks | Long tasks, prompt fatigue |
+| `dontAsk` | Only pre-approved tools | Locked-down CI |
+| `bypassPermissions` | Everything | Isolated containers only |
+
+Cycle modes with **Shift+Tab**, or use the mode indicator in the VS Code extension.
+Two wrinkles worth knowing: `defaultMode: "auto"` is **ignored** if you put it in a
+project's `.claude/settings.json` — so that a repository cannot grant itself auto
+mode — and must go in your personal `~/.claude/settings.json` instead; and in
+sessions started by the VS Code extension, a settings-file `defaultMode` does not
+set the starting mode at all, so pick it from the mode indicator.
+
+#### What this means for your permission rules
+
+Rules still matter, but their job has changed, and one of them changed the most:
+
+- **Broad `allow` rules are dropped in auto mode.** On entering auto mode Claude
+  Code discards permission rules known to grant arbitrary code execution — blanket
+  shell access, wildcarded interpreters (`python`, `node`, `ruby`), package-manager
+  run commands — so that a checked-in rule cannot be used to bypass the classifier.
+  Narrow rules ("allow running this formatter") carry over. **This is the part of
+  older advice, including earlier versions of this guide, that is now obsolete:**
+  writing `"allow": ["Bash"]` to stop the prompts no longer does anything in the
+  default mode. Auto mode already stopped them. That line is now only load-bearing
+  if you deliberately work in Manual mode.
+- **`ask` and `deny` rules still fire, in every mode** — including
+  `bypassPermissions`. An explicit `ask` rule forces a prompt even in auto mode.
+  These are now the load-bearing half of your config: they are how *you* overrule
+  the classifier, in both directions.
+
+Precedence is `deny` > `ask` > `allow`, and a broad deny beats a narrow allow, so a
+deny rule cannot carry exceptions.
+
+#### The rules worth writing for a research project
+
+Here is the part the classifier cannot do for you, and it matters more in research
+than in most software work. **The classifier reasons about generic destructiveness.
+It has no idea what is scientifically irreplaceable.** A 40 MB table of
+ground-truth values that took three weeks of CPU to produce is, to a classifier, an
+ordinary file in your working directory — and overwriting it is exactly the sort of
+in-directory edit that auto mode is designed to let through without interrupting
+you. Nothing about it looks dangerous.
+
+So the `ask`/`deny` lists are no longer mainly a list of dangerous *commands*.
+Write them as a list of **irreplaceable things in this project**:
 
 ```json
 "permissions": {
-  "allow": ["Bash"],
   "ask": [
     "Bash(rm *)",
-    "Bash(rmdir *)",
     "Bash(git reset --hard*)",
     "Bash(git clean*)",
-    "Bash(git checkout --*)",
-    "Bash(git push -f*)",
     "Bash(git push --force*)",
-    "Bash(chmod -R*)",
-    "Bash(mv *)",
-    "Bash(dd *)",
-    "Bash(truncate *)",
-    "Bash(find* -delete*)",
-    "Bash(find* -exec rm*)",
-    "Bash(sudo*)",
-    "Bash(mkfs*)",
-    "Bash(fdisk*)",
-    "Bash(shred*)"
+    "Bash(mv *)"
   ],
-  "deny": []
+  "deny": [
+    "Edit(./data/ground-truth/**)",
+    "Edit(./numerics/validated-states/**)"
+  ]
 }
 ```
 
-`"allow": ["Bash"]` approves all shell commands by default — no more permission
-prompts for compiling LaTeX, running Python, or using git. The `ask` list names
-everything that should give you pause — deletions, history-rewriting git commands,
-privilege escalation, disk operations — so Claude stops and asks before running any
-of them, but you can always approve inline when you mean it. Nothing is blocked, so
-you never have to leave your session to edit settings just to delete a stray file.
+Two syntax facts that will otherwise cost you an afternoon:
 
-> **Want a true hard block?** Move a pattern into `deny` and it will be refused
-> outright, with no prompt — useful if there is a command you want to be *certain*
-> never runs (e.g. `Bash(sudo rm*)`). By default the starter keeps `deny` empty.
+- **File rules are checked against `Edit(path)` and `Read(path)` only.** Write
+  `Edit(./data/**)`, not `Write(./data/**)` — a `Write`, `NotebookEdit`, or
+  `MultiEdit` path rule is *accepted and then never consulted*, and only warns at
+  startup. (Requires Claude Code v2.1.210 or later to warn at all.)
+- **A trailing space before `*` enforces a word boundary.** `Bash(ls *)` matches
+  `ls -la` but not `lsof`; `Bash(ls*)` matches both. The `:*` suffix is equivalent
+  to a trailing wildcard (`Bash(ls:*)` = `Bash(ls *)`), but only at the end of a
+  pattern.
 
 The starter package [`starter/.claude/settings.json`](starter/.claude/settings.json)
-uses exactly this configuration. Copy it rather than writing your own from scratch.
+ships this shape, with the ground-truth `deny` entries commented as placeholders for
+you to point at your own irreplaceable files. Copy it rather than writing your own.
+
+> **Turning auto mode off.** If you would rather review every action, cycle to
+> Manual with Shift+Tab, or set `"permissions": {"defaultMode": "default"}` in
+> `~/.claude/settings.json`. Organisations can remove it entirely with
+> `"permissions": {"disableAutoMode": "disable"}` in managed settings. Anthropic's
+> own framing is worth repeating: auto mode reduces permission prompts but **does
+> not guarantee safety** — use it where you trust the general direction, not as a
+> substitute for reviewing sensitive operations.
 
 ### Hooks
 
@@ -3001,7 +3058,7 @@ starter/
 │   ├── msgs/                       ← open threads
 │   └── archive/                    ← settled threads (keep: the decision record)
 └── .claude/
-    ├── settings.json                ← permissions (allow routine · ask before dangerous) + hooks (mirror + pipeline-guard OFF by default)
+    ├── settings.json                ← permissions (ask before dangerous · deny edits to irreplaceable data) + hooks (mirror + pipeline-guard OFF by default)
     ├── hooks/
     │   ├── pre-compact.sh           ← auto-save before context compression
     │   ├── promise-checker.sh       ← Stop hook: catches "I'll remember" without a write
@@ -3045,7 +3102,7 @@ in Part I.
 | [`starter/CHANGELOG.md`](starter/CHANGELOG.md) | (Big projects — optional) **Research changelog**: the dated, per-result log — one table row per result, each carrying its date, workbook section label, script, data file, and honest residue, plus `FALSIFIED` rows for the routes already ruled out. Keeps `CLAUDE.md`'s status section a lean snapshot and gives the project a greppable index. Distinct from the DONE log in `next-session-prompts.md` (chronological, per session) |
 | [`starter/.gitignore`](starter/.gitignore) | Ignore rules: Overleaf clone, LaTeX build artifacts, Python/Wolfram scratch, generated outputs (tracks `.vscode/settings.json`, ignores other VS Code state) |
 | [`starter/.vscode/settings.json`](starter/.vscode/settings.json) | Word wrap for notebook *cells only* (`notebook.editorOptionsCustomizations`), so `.tex`/`.py`/`.md` files are left alone, plus wrapping output (`notebook.output.wordWrap`) and Wolfram results as wrapping plain text instead of a scroll-only image (`wolfbook.notebook.rendering.outputFormat: InputForm`) (see `docs/wolfbook-notebook-ux.md`) |
-| [`starter/.claude/settings.json`](starter/.claude/settings.json) | Annotated generic settings: permissions that allow routine commands, ask before anything dangerous, and block nothing by default + hooks for pre-compact, dual-remote push, and promise-checker |
+| [`starter/.claude/settings.json`](starter/.claude/settings.json) | Annotated generic settings: permission rules written for the **auto-mode era** — `ask` rules that fire in every mode and overrule the classifier, plus placeholder `deny` rules protecting the files that are scientifically irreplaceable (the one judgement a classifier cannot make for you) + hooks for pre-compact, dual-remote push, and promise-checker |
 | [`starter/.claude/hooks/pre-compact.sh`](starter/.claude/hooks/pre-compact.sh) | Pre-compact hook: timestamps CLAUDE.md and snapshots the task log before context compression |
 | [`starter/.claude/skills/latex-compile/SKILL.md`](starter/.claude/skills/latex-compile/SKILL.md) | Skill: compile LaTeX, fix every error and aesthetic issue (overfull boxes, fonts, widows), and gate on broken `\ref`/`\cite` so a dead reference (`??`/`[?]`) can't ship silently |
 | [`starter/.claude/skills/sync-brief/SKILL.md`](starter/.claude/skills/sync-brief/SKILL.md) | Skill: propagate load-bearing changes from workbook.tex to brief.tex |
@@ -3098,7 +3155,7 @@ agent-specific wiring:
 | This repo (Claude Code) | Twin (ChatGPT / Codex) |
 |---|---|
 | `CLAUDE.md` — global `~/.claude/CLAUDE.md`, personal `CLAUDE.local.md` | `AGENTS.md` — global `~/.codex/AGENTS.md`, personal `AGENTS.override.md` |
-| `.claude/settings.json` — allow/ask permission lists | `.codex/config.toml` — OS-level sandbox (`workspace-write`) + approval policy (`on-request`) |
+| `.claude/settings.json` — ask/deny permission rules, layered on a [permission mode](#permissions) (**auto** by default since Aug 2026: a classifier vets each action) | `.codex/config.toml` — OS-level sandbox (`workspace-write`) + approval policy (`on-request`). No classifier equivalent: the sandbox is the mechanism |
 | Skills: `.claude/skills/<name>/SKILL.md`, invoked `/name` | Same SKILL.md folder standard: `.agents/skills/<name>/SKILL.md`, invoked `$name` |
 | Global skills: `~/.claude/skills/` | User-scope skills: `~/.agents/skills/` |
 | Hooks declared in `.claude/settings.json` | Hooks declared in `.codex/hooks.json`; each script must be trusted once via `/hooks` |

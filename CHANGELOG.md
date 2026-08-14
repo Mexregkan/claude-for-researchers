@@ -13,6 +13,53 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.08 · v1.14.0 — 2026-08-14 (update)
+
+### Changed
+- **The Permissions section is rewritten for auto mode**, which became the default
+  permission mode for new sessions on Pro, Max, and Team plans on **14 August 2026**.
+  Instead of prompting, Claude routes each action through a separate classifier model that
+  blocks anything escalating beyond your request, targeting infrastructure it does not
+  recognise, or driven by hostile content it just read; after three consecutive blocks (or
+  twenty in a session) it falls back to asking. The section now leads with the **mode** —
+  the session-wide baseline, with the full table of `default`/Manual, `acceptEdits`, `plan`,
+  `auto`, `dontAsk`, `bypassPermissions` — and treats the `settings.json` rules as the layer
+  on top.
+- **Correcting earlier advice in this guide: `"allow": ["Bash"]` no longer stops the
+  prompts.** On entering auto mode, Claude Code *drops* permission rules known to grant
+  arbitrary code execution — blanket shell access, wildcarded interpreters (`python`,
+  `node`, `ruby`), package-manager run commands — so that a checked-in rule cannot be used
+  to bypass the classifier. Narrow rules carry over. The blanket allow is now only
+  load-bearing if you deliberately work in Manual mode; auto mode had already stopped the
+  prompts. `ask` and `deny` rules are unaffected — **they fire in every mode**, including
+  `bypassPermissions`, which makes them the load-bearing half of your config and the way you
+  overrule the classifier in either direction.
+- **`starter/.claude/settings.json` now protects data, not just commands.** The premise:
+  *the classifier reasons about generic destructiveness; it cannot know what is
+  scientifically irreplaceable.* A ground-truth table that took three weeks of CPU is, to a
+  classifier, an ordinary file in your working directory — and overwriting it is exactly the
+  in-directory edit auto mode is designed to let through. So `deny` is no longer empty: it
+  ships two commented placeholder rules for you to repoint at your own irreplaceable
+  artifacts, and the whole permissions block is re-annotated for the new default.
+- Two syntax facts now documented, both easy to get wrong: **file rules are only checked
+  against `Edit(path)` and `Read(path)`** — a `Write()`/`NotebookEdit()`/`MultiEdit()` path
+  rule is accepted and then never consulted, warning only at startup — and **a space before
+  a trailing `*` enforces a word boundary** (`Bash(ls *)` matches `ls -la` but not `lsof`;
+  `Bash(ls*)` matches both).
+- Smaller consistency fixes from the same pass: the Shift+Tab cycle in *Plan mode* now names
+  Manual and notes where auto slots in and how the VS Code extension differs; the
+  first-session install note no longer promises that routine commands stop prompting "from
+  the next session on", since that now depends on your mode; and the Claude/Codex
+  differences table records that Codex has no classifier equivalent — its sandbox is the
+  mechanism.
+
+**Action needed (optional):** re-copy
+[`starter/.claude/settings.json`](starter/.claude/settings.json), or just add a `deny` block
+naming the files in your project that must never be overwritten. Also worth knowing:
+`defaultMode: "auto"` is deliberately **ignored** from a project's `.claude/settings.json`
+(a repository cannot grant itself auto mode) — set it in `~/.claude/settings.json`, and in
+VS-Code-started sessions pick the mode from the extension's indicator instead.
+
 ## v2026.08 · v1.13.0 — 2026-08-14 (update)
 
 ### Added

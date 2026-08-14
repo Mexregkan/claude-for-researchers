@@ -2,12 +2,14 @@
   "_comment": "Generic Claude Code settings for a research project. Copy to your project's .claude/settings.json and adapt.",
 
   "permissions": {
-    "_comment_precedence": "Precedence: deny > ask > allow.",
+    "_comment_modes": "READ FIRST. The MODE sets the session baseline; these rules override it per pattern. Since 2026-08-14 new sessions on Pro/Max/Team start in AUTO mode, where a classifier vets each action instead of prompting you. Cycle modes with Shift+Tab, or the mode indicator in the VS Code extension. NOTE: defaultMode:'auto' is IGNORED from this file by design (a repo cannot grant itself auto mode) — put it in ~/.claude/settings.json. See the guide's Permissions section.",
 
-    "_comment_allow": "Allow all Bash commands by default — no prompt for ordinary work: compile LaTeX, run Python/wolframscript, git, install packages, any standard research tool. mcp__wolfbook = every tool of the Wolfbook MCP server (notebook read/edit/run). Remove mcp__wolfbook if you are not using Wolfbook.",
+    "_comment_precedence": "Precedence: deny > ask > allow. A broad deny beats a narrow allow, so a deny rule cannot carry exceptions.",
+
+    "_comment_allow": "NOTE: broad allow rules (blanket 'Bash', wildcarded python/node/ruby, package-manager run) are DROPPED on entering auto mode, so a checked-in rule cannot bypass the classifier. Keeping 'Bash' here is still useful if you work in Manual mode; in auto mode it simply has no effect. mcp__wolfbook = every tool of the Wolfbook MCP server — remove it if you do not use Wolfbook.",
     "allow": ["Bash", "mcp__wolfbook"],
 
-    "_comment_ask": "Recoverable-but-dangerous: PROMPT for confirmation instead of running silently. You can always approve inline when you really mean it. This is the safety net that catches Claude before an irreversible action without ever standing in your way.",
+    "_comment_ask": "Ask rules FIRE IN EVERY MODE, including auto — this is how you overrule the classifier. Recoverable-but-dangerous commands prompt instead of running silently; approve inline when you really mean it.",
     "ask": [
       "Bash(rm *)",
       "Bash(rmdir *)",
@@ -28,8 +30,11 @@
       "Bash(shred*)"
     ],
 
-    "_comment_deny": "Empty by default — nothing is hard-blocked. Every dangerous command is in 'ask' so Claude pauses and you approve or refuse in the moment. Add commands here only if you want them refused outright with no prompt.",
-    "deny": []
+    "_comment_deny": "THE ONE THING THE CLASSIFIER CANNOT DO FOR YOU. It reasons about generic destructiveness; it cannot know which files are scientifically irreplaceable. A ground-truth table that took three weeks of CPU looks like an ordinary file in your working directory — exactly the kind of edit auto mode lets through. List your irreplaceable artifacts here. SYNTAX: file rules are only checked against Edit(path) and Read(path) — a Write()/NotebookEdit()/MultiEdit() path rule is accepted and then NEVER consulted (it only warns at startup). The two entries below are PLACEHOLDERS: repoint them at your own files or delete them.",
+    "deny": [
+      "Edit(./data/ground-truth/**)",
+      "Edit(./numerics/validated-states/**)"
+    ]
   },
 
   "hooks": {
