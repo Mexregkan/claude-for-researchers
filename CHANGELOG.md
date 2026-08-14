@@ -13,6 +13,17 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.08 · v1.14.1 — 2026-08-14 (fix)
+
+### Fixed
+- **Corrects a claim in v1.14.0**: the Claude/Codex differences table said Codex had "no
+  classifier equivalent". It does — **"Approve for me"**, which routes approval requests to a
+  separate reviewer agent. The row now states the real distinction, which is more interesting
+  than the false one: Claude's **auto mode** is a *session-wide baseline* and the *default*
+  since August 2026, while Codex's "Approve for me" is *opt-in* and only vets requests that
+  *cross the sandbox boundary* — routine in-sandbox actions never reach its reviewer at all.
+  The twin guide covers the Codex side in full at its v1.6.0.
+
 ## v2026.08 · v1.14.0 — 2026-08-14 (update)
 
 ### Changed

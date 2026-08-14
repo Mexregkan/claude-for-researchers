@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.08 · v1.14.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.08 · v1.14.1** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -3155,7 +3155,7 @@ agent-specific wiring:
 | This repo (Claude Code) | Twin (ChatGPT / Codex) |
 |---|---|
 | `CLAUDE.md` — global `~/.claude/CLAUDE.md`, personal `CLAUDE.local.md` | `AGENTS.md` — global `~/.codex/AGENTS.md`, personal `AGENTS.override.md` |
-| `.claude/settings.json` — ask/deny permission rules, layered on a [permission mode](#permissions) (**auto** by default since Aug 2026: a classifier vets each action) | `.codex/config.toml` — OS-level sandbox (`workspace-write`) + approval policy (`on-request`). No classifier equivalent: the sandbox is the mechanism |
+| `.claude/settings.json` — ask/deny rules on top of a [permission mode](#permissions). **Auto mode** (a classifier vetting every action) is the *default* since Aug 2026 | `.codex/config.toml` — OS-level sandbox (`workspace-write`) + approval policy (`on-request`). Its reviewer equivalent, **"Approve for me"**, is opt-in and only vets *boundary crossings* — the sandbox, not a classifier, is the primary mechanism |
 | Skills: `.claude/skills/<name>/SKILL.md`, invoked `/name` | Same SKILL.md folder standard: `.agents/skills/<name>/SKILL.md`, invoked `$name` |
 | Global skills: `~/.claude/skills/` | User-scope skills: `~/.agents/skills/` |
 | Hooks declared in `.claude/settings.json` | Hooks declared in `.codex/hooks.json`; each script must be trusted once via `/hooks` |
