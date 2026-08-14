@@ -13,6 +13,58 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.08 · v1.13.0 — 2026-08-14 (update)
+
+### Added
+- **`BUGS.md` — the recurring-mistake registry**, now a fifth universal file alongside
+  `CLAUDE.md` and the trinity, with a new guide section
+  ([BUGS.md: the recurring-mistake registry](README.md#bugsmd-the-recurring-mistake-registry))
+  and a [`starter/BUGS.md`](starter/BUGS.md) template. The premise: the bugs that cost days
+  are the ones that hand back a **plausible number with no error at all** — a pattern that
+  matched nothing and so "changed nothing", a control that could not have failed, a
+  convention imported from a paper that computes perfectly and answers a different question.
+  They recur, and they are invisible to code review. So each one gets a short
+  `symptom → cause → guard` entry, filed by failure mode, and the file carries a standing
+  rule at the top: **read it before writing or editing any code, and add a new class in the
+  same turn you fix it**.
+  - **The unit is the class, not the incident.** "The run on 3 June gave the wrong
+    normalisation" is a logbook entry; "a formula imported from a paper carries the paper's
+    conventions, so gate it against something this project measured independently" is a
+    registry entry — it will fire again, on a different paper, next year. Narratives stay in
+    `workbook.tex` and `CHANGELOG.md`; the entry links to them in one parenthesis.
+  - **Three marks that make it self-maintaining**: 🔴 has bitten us more than once · ⚠ silent
+    (a confident wrong answer, not an error) · ✅ has a mechanical guard. Promoting an entry
+    to 🔴 the second time it bites is a standing instruction to go build the ✅ — an assert
+    that aborts beats a sentence you have to remember, and the prose entry then survives as
+    the explanation of what the gate does *not* cover.
+  - **Two rules worth adopting even without the file**, both now in `starter/CLAUDE.md`:
+    *if two diagnostics in one run disagree, the bug is in a diagnostic, not in the science*;
+    and *a control that cannot fail is worse than no control* — before calling a control
+    passed, state what it could have detected, and if the answer is "nothing", call it
+    **vacuous**. The second is a rule about *reporting*, which is exactly where an eager
+    assistant rounds "the test was empty" up to "the test passed".
+  - The template ships the section skeleton, the legend, the standing rule, and a set of
+    starting entries that are true in almost any computational project (a rewrite rule that
+    matches nothing returns its input unchanged; an aggregate over an empty collection is a
+    scalar zero, not the zero object; a clean exit status is not a pass; a cached state plus
+    a "we already did X" flag is a stale-data hazard — verify the data, never the flag).
+
+### Changed
+- **The trap-log advice in *Honest limitations* is now a pointer, not a second copy.** That
+  section previously suggested keeping traps "as memories or in a `GOTCHAS` section"; it now
+  explains *why* silent wrong answers belong under "what Claude gets wrong" and sends the
+  reader to the registry for the mechanics. Memory is the complement, not the substitute —
+  it surfaces by relevance, the file is read deliberately before you touch code.
+- **`scripts/bootstrap.sh` installs `BUGS.md` for every project**, and both setup routes
+  (the paste-in prompt and the script) now ask Claude to stamp your name and date into the
+  standing rule, keep the sections matching your engine, and delete the `[EXAMPLE]` entries.
+
+**Action needed (optional):** copy [`starter/BUGS.md`](starter/BUGS.md) into your project
+root and add the pointer + standing rule to your `CLAUDE.md` (the block is in
+[`starter/CLAUDE.md`](starter/CLAUDE.md), under *Recurring mistakes*). Nothing breaks
+without it — but the file only starts paying when something is written in it, so the useful
+first step is to add the last trap that cost you an afternoon.
+
 ## v2026.08 · v1.12.0 — 2026-08-09 (update)
 
 ### Changed

@@ -8,7 +8,7 @@
 #
 # It asks a few questions and installs:
 #   - the universal core, for every project: CLAUDE.md + the "holy trinity"
-#     (workbook.tex, brief.tex, next-session-prompts.md)
+#     (workbook.tex, brief.tex, next-session-prompts.md) + BUGS.md
 #   - generic infrastructure: .claude/settings.json, hooks, .gitignore
 #   - ONLY the skills your answers make relevant (a skill already present in
 #     ~/.claude/skills/ is skipped — global skills work in every project)
@@ -111,11 +111,15 @@ core starter/CLAUDE.md                        CLAUDE.md
 core starter/workbook.tex                     workbook.tex
 core starter/brief.tex                        brief.tex
 core starter/next-session-prompts.md          next-session-prompts.md
+core starter/BUGS.md                          BUGS.md
 core starter/.gitignore                       .gitignore
 core starter/.claude/settings.json            .claude/settings.json
 core starter/.claude/hooks/pre-compact.sh     .claude/hooks/pre-compact.sh
 core starter/.claude/hooks/promise-checker.sh .claude/hooks/promise-checker.sh
 chmod +x .claude/hooks/*.sh 2>/dev/null
+say "  -> BUGS.md is the recurring-mistake registry: one symptom -> cause -> guard entry"
+say "     per class of mistake, read before writing any code. It ships with generic"
+say "     starting entries; replace them with your own as the project bites you."
 
 # Big-project templates (optional): the equation-light overview doc, the strategy
 # map, and the research changelog. Only useful once a project is large /
@@ -237,9 +241,10 @@ say "folder and paste (after the last line, describe your project in your own wo
 say "--------------------------------------------------------------------------"
 say "I set this project up with the claude-for-researchers bootstrap script, so"
 say "all files and skills are already in place. Read CLAUDE.md, workbook.tex,"
-say "brief.tex, and next-session-prompts.md. Then replace every bracketed stub"
-say "in them with real content from the description below — goal, file map,"
-say "conventions, introduction, and a real first task in next-session-prompts.md."
+say "brief.tex, next-session-prompts.md, and BUGS.md. Then replace every bracketed"
+say "stub in them with real content from the description below — goal, file map,"
+say "conventions, introduction, a real first task in next-session-prompts.md, and"
+say "my name plus today's date in the BUGS.md standing rule."
 say "Do not leave placeholder text anywhere; ask me rather than inventing"
 say "anything you do not know."
 say ""
