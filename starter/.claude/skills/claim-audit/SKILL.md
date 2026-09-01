@@ -45,8 +45,11 @@ verdict** — it cannot read mathematics. A clean run means no cheap tell fired,
 labels are honest. Steps 1–3 are the actual audit and are not optional when step 0 is quiet.
 
 It needs your checks to carry labels — `gate("short neutral description", <expression>)` or the
-bracket form in Wolfram. If it reports **PARSED ZERO LABELLED CHECKS**, it did not run; do not
-report it as clean. That is also a finding in itself: a check with no label cannot be audited,
+bracket form in Wolfram. Read its section **[0] PARSE SANITY** first: it prints how many call
+sites it found, how many were the helper's own *definition* (never counted as checks), and how
+many it parsed — and says **PARSE MISMATCH** if those do not reconcile, which means it silently
+dropped call sites and every number below is a lower bound. If it reports **PARSED ZERO LABELLED
+CHECKS**, it did not run; do not report it as clean. That is also a finding in itself: a check with no label cannot be audited,
 and cannot be reported honestly either, because the sentence you eventually write about it gets
 invented later, from memory, in a different pass.
 
@@ -148,7 +151,12 @@ adopt either.
 - Writing the headline, summary or reply before the ledger exists.
 - "Passed N/N checks" offered as the evidence for a claim.
 - Reporting a control as passing without stating what it could have detected.
-- Reporting `gate_audit.sh` as clean when it parsed zero labelled checks.
+- Reporting `gate_audit.sh` as clean when it parsed zero labelled checks, or when its
+  section [0] reported a parse mismatch.
+- Editing `gate_audit.sh` without re-running `bash .claude/skills/claim-audit/selftest.sh`.
+  Its output is mostly the word "none", so a detector that quietly stops firing is
+  indistinguishable from a clean script — which is the failure this whole skill is about,
+  turned on the tool itself.
 
 ## Related
 

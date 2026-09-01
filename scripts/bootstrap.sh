@@ -172,7 +172,7 @@ skill sync-brief
 # reference these by name, so installing them conditionally would leave a dangling /command.
 # Both are inert until invoked, and every project makes claims — even one with no code.
 skill simple-case-gate
-skill claim-audit gate_audit.sh
+skill claim-audit gate_audit.sh selftest.sh
 [ "$CITE" -eq 1 ]     && skill verify-citation
 if [ "$VALID" -eq 1 ]; then skill reality-check; skill cross-validate; fi
 case $NUMERICS in mathematica|both)

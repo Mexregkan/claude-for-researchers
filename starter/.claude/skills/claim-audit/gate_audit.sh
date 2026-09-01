@@ -65,15 +65,24 @@ src  = open(path, encoding="utf-8", errors="replace").read()
 OPEN = {"[": "]", "(": ")"}
 
 def extract(src, name):
-    """Find name[...] / name(...) calls; split first string arg (label) from the rest (body)."""
-    out = []
+    """Find name[...] / name(...) calls; split first string arg (label) from the rest (body).
+
+    Returns (gates, defs, raw). `defs` are the helper's own DEFINITION sites, which must
+    never be counted as checks: doing so inflates every number this script prints by one,
+    silently, and the count still looks plausible. `raw` is an independent occurrence count
+    used by section [0] to prove nothing was dropped."""
+    out, defs = [], []
+    raw = 0
     for m in re.finditer(r'(?<![A-Za-z0-9_.])' + re.escape(name) + r'\s*([\[(])', src):
+        raw += 1
         opener = m.group(1)
         closer = OPEN[opener]
         i = m.end()                      # first char inside the bracket
-        # skip the helper's own definition:  gate[l_, b_] :=   /   def gate(label, ok):
+        line_no = src.count("\n", 0, m.start()) + 1
+        # (i) Python/Julia definition:  def gate(label, ok):
         pre = src[max(0, m.start() - 4):m.start()]
         if pre.strip().endswith("def"):
+            defs.append(line_no)
             continue
         depth, j = 1, i
         label, body, past, instr, quote = "", "", False, False, ""
@@ -108,18 +117,39 @@ def extract(src, name):
             if past:
                 body += c
             j += 1
+        # (ii) Wolfram/Maple definition:  gate[lbl_, cond_] := ...   (or a plain `=`)
+        after = src[j + 1:j + 4].lstrip()
+        if after.startswith(":=") or (after.startswith("=") and not after.startswith("==")):
+            defs.append(line_no)
+            continue
         if not past:                     # one-argument call: not a labelled check
             continue
         out.append({
-            "line": src.count("\n", 0, m.start()) + 1,
+            "line": line_no,
             "label": label.strip(),
             "body": re.sub(r"\s+", " ", body).strip(),
         })
-    return out
+    return out, defs, raw
 
-gates = extract(src, gate)
+gates, defs, raw = extract(src, gate)
 
-# --- [0] did it run at all? ----------------------------------------------------------
+# --- [0] parse sanity: does this audit have anything to audit, and did it see it all? --
+print("--- [0] PARSE SANITY (does this audit have anything to audit?)")
+print(f"    '{gate}' call sites in file : {raw}")
+print(f"    definitions skipped        : {len(defs)}" + (f"  (line {', '.join(map(str, defs))})" if defs else ""))
+print(f"    checks parsed              : {len(gates)}")
+accounted = len(gates) + len(defs)
+if gates and accounted != raw:
+    print()
+    print(f"    !!! PARSE MISMATCH: {raw - accounted} call site(s) unaccounted for")
+    print(f"        ({len(gates)} parsed + {len(defs)} definitions != {raw} found by scan). The parser")
+    print("        silently dropped call sites, so every count below is a LOWER BOUND and the")
+    print("        findings are incomplete. Fix the parser before using this run as evidence.")
+    print()
+elif gates:
+    print("    -> consistent: every call site is accounted for.")
+print()
+
 if not gates:
     print("!!! [0] PARSED ZERO LABELLED CHECKS — THIS AUDIT DID NOT RUN. !!!")
     print()

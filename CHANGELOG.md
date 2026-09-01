@@ -13,6 +13,40 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.09 · v1.17.1 — 2026-09-01 (fix)
+
+A bug found in `gate_audit.sh` by a research project that had independently hit it, plus the
+regression suite that would have caught it.
+
+### Fixed
+- **`gate_audit.sh` counted the helper's own definition as a check.** A Wolfram
+  `gate[lbl_, cond_] := ...` was parsed as a call site, so a file with 2 real checks reported
+  3 — and every count the tool printed was inflated by one, silently and plausibly. Wolfram and
+  Maple-style definitions are now recognised and skipped, and reported separately.
+
+### Added
+- **Section `[0] PARSE SANITY`** in `gate_audit.sh`: it now prints how many call sites it found,
+  how many were definitions, and how many it parsed — and says **PARSE MISMATCH** when those do
+  not reconcile. That catches a parser which silently *drops* checks, which the previous
+  zero-checks guard could not see: dropping four of five still leaves a plausible report.
+- **[`selftest.sh`](starter/.claude/skills/claim-audit/selftest.sh)**, a 16-case regression
+  suite for `gate_audit.sh`. Every case asserts a detector **fires** on input designed to trip
+  it, in both Wolfram and Python: zero checks, definition-only, definition-not-counted, parse
+  reconciliation, all four detectors, a renamed helper via `GATE=`, and an unreadable file as a
+  distinct failure from a vacuous parse.
+- The design rule behind it is now in the guide, because it generalises past this one tool:
+  **a tool whose output is mostly the word "none" needs a regression suite more than most code
+  does**, since a detector that quietly stops firing is indistinguishable from a clean input.
+  Both bugs above printed a plausible number and neither crashed. It is the skill's own "a
+  control that cannot fail is not a control" rule, turned on the tool itself.
+- `scripts/bootstrap.sh` now installs `selftest.sh` alongside the skill.
+
+### Action needed
+- Optional. If you copied `claim-audit` already, re-copy
+  `starter/.claude/skills/claim-audit/gate_audit.sh` and add `selftest.sh`. Any counts you
+  recorded from the old version were one too high wherever the helper was defined in the same
+  file. Run `bash .claude/skills/claim-audit/selftest.sh` after any edit to the audit script.
+
 ## v2026.09 · v1.17.0 — 2026-09-01
 
 Two things long runs leave behind. Both cost real money, neither announces itself, and one

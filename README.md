@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.09 · v1.17.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.09 · v1.17.1** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -1643,6 +1643,19 @@ clean run means "no cheap tell fired", never "the labels are honest". And if it 
 labelled checks it says so loudly and exits non-zero, rather than printing an all-clear on a
 file it could not parse: a silent clean report is the one failure that would make a tool like
 this worse than useless.
+
+That second point generalises into a design rule worth stealing for your own tools. **A tool
+whose output is mostly the word "none" needs a regression suite more than most code does**,
+because a detector that quietly stops firing is indistinguishable from a clean input. Two real
+bugs in this one make the case: a file containing no checks at all was once reported as a clean
+run, and the helper's own *definition* (`gate[l_, c_] := ...`) was counted as a check, inflating
+every number the tool had ever printed by one. Neither crashed. Both printed a plausible number.
+So it ships with [`selftest.sh`](starter/.claude/skills/claim-audit/selftest.sh), where every
+case asserts that a detector **fires** on input designed to trip it — the same "a control that
+cannot fail is not a control" rule the skill applies to your research, turned on the tool
+itself. Run it after any edit. Its section `[0]` also reconciles the checks it parsed against an
+independent count of call sites, so a parser that silently *drops* checks is caught too, not
+just one that finds none.
 
 ### The report shape, and one tag per claim
 
@@ -3484,7 +3497,7 @@ starter/
         ├── reality-check/SKILL.md   ← /reality-check skill
         ├── cross-validate/SKILL.md  ← /cross-validate skill
         ├── simple-case-gate/SKILL.md ← /simple-case-gate skill: gate a proposal on the simplest case before escalating
-        ├── claim-audit/             ← /claim-audit skill (SKILL.md + gate_audit.sh): audit a passing script before writing prose
+        ├── claim-audit/             ← /claim-audit skill (SKILL.md + gate_audit.sh + selftest.sh): audit a passing script before writing prose
         ├── overleaf-sync/SKILL.md   ← /overleaf-sync skill
         ├── write-pipeline/          ← (pipeline workflow — optional) /write-pipeline skill (SKILL.md + dump_code.py)
         ├── check-pipeline/SKILL.md  ← (pipeline workflow — optional) /check-pipeline skill
@@ -3523,7 +3536,7 @@ in Part I.
 | [`starter/.claude/skills/reality-check/SKILL.md`](starter/.claude/skills/reality-check/SKILL.md) | Skill: re-derive a contested result in isolation to detect sycophantic capitulation |
 | [`starter/.claude/skills/cross-validate/SKILL.md`](starter/.claude/skills/cross-validate/SKILL.md) | Skill: format a physics claim for cross-model validation against Gemini or ChatGPT |
 | [`starter/.claude/skills/simple-case-gate/SKILL.md`](starter/.claude/skills/simple-case-gate/SKILL.md) | `/simple-case-gate` skill: gate a proposed mechanism, ansatz, recursion or claimed-universal identity on the **simplest admissible nondegenerate case** before increasing order, weight, rank or free parameters — and, when that case fails, stop escalation and diagnose instead. A modified proposal restarts the gate |
-| [`starter/.claude/skills/claim-audit/`](starter/.claude/skills/claim-audit/) | `/claim-audit` skill (SKILL.md + `gate_audit.sh`): the hostile read of your own result, run after the script passes and **before** any prose exists. The computed-object ledger (symbol literally built in the code → restriction actually established → headline, banning a headline noun absent from the code), the weakest-statement rewrite of every check label, and the report shape that must name what the result does *not* establish. `gate_audit.sh` is the mechanical pre-filter — hand-assigned values, over-budget labels, advocacy language, and bodies true for every input; it exits non-zero rather than printing an all-clear on a file it could not parse |
+| [`starter/.claude/skills/claim-audit/`](starter/.claude/skills/claim-audit/) | `/claim-audit` skill (SKILL.md + `gate_audit.sh`): the hostile read of your own result, run after the script passes and **before** any prose exists. The computed-object ledger (symbol literally built in the code → restriction actually established → headline, banning a headline noun absent from the code), the weakest-statement rewrite of every check label, and the report shape that must name what the result does *not* establish. `gate_audit.sh` is the mechanical pre-filter — hand-assigned values, over-budget labels, advocacy language, and bodies true for every input; it exits non-zero rather than printing an all-clear on a file it could not parse, never counts the helper's own definition as a check, and reconciles what it parsed against an independent call-site count. `selftest.sh` is its regression suite (16 cases, each asserting a detector FIRES on input built to trip it) — run it after any edit, because a tool whose output is mostly "none" hides its own regressions |
 | [`starter/.claude/skills/overleaf-sync/SKILL.md`](starter/.claude/skills/overleaf-sync/SKILL.md) | Skill: sync a git clone of a shared Overleaf project — status/pull/diff, and a safe merge-only publish |
 | [`starter/.claude/skills/write-pipeline/SKILL.md`](starter/.claude/skills/write-pipeline/SKILL.md) | Skill (pipeline workflow): write/refresh a `Pipeline/` doc mapping a big code's data flow, key symbols, and gotchas so Claude reads the map before the source. Ships `dump_code.py` (renders a `.wb`/`.ipynb` notebook to a readable outline + full dump) |
 | [`starter/.claude/skills/check-pipeline/SKILL.md`](starter/.claude/skills/check-pipeline/SKILL.md) | Skill (pipeline workflow): drift check — verify every symbol, cell number, data file, and I/O claim in a pipeline doc still matches the code; classify BROKEN vs STALE; fix the *doc* (code is ground truth) on approval |
