@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.08 · v1.15.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.09 · v1.16.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -56,30 +56,31 @@ This guide serves two audiences at once, so it is organised in parts:
 6. [The dual-document pattern: workbook.tex and brief.tex](#the-dual-document-pattern-workbooktex-and-brieftex)
 7. [Session continuity: next-session-prompts.md](#session-continuity-next-session-promptsmd)
 8. [BUGS.md: the recurring-mistake registry](#bugsmd-the-recurring-mistake-registry)
-9. [Session length and context limits](#session-length-and-context-limits)
-10. [Plan mode: investigate before you edit](#plan-mode-investigate-before-you-edit)
-11. [Skills: reusable procedures](#skills-reusable-procedures)
-12. [Git workflow for academics](#git-workflow-for-academics)
-13. [Numerics and computation](#numerics-and-computation)
+9. [Claim discipline: name only what you computed](#claim-discipline-name-only-what-you-computed)
+10. [Session length and context limits](#session-length-and-context-limits)
+11. [Plan mode: investigate before you edit](#plan-mode-investigate-before-you-edit)
+12. [Skills: reusable procedures](#skills-reusable-procedures)
+13. [Git workflow for academics](#git-workflow-for-academics)
+14. [Numerics and computation](#numerics-and-computation)
 
 **[Part III: Power tools](#part-iii-power-tools)** — *optional; adopt once the basics feel comfortable*
 
-14. [Settings and hooks](#settings-and-hooks)
-15. [Group projects: shared vs personal configuration](#group-projects-shared-vs-personal-configuration)
-16. [Reducing token consumption: rtk](#reducing-token-consumption-rtk)
-17. [The pipeline workflow: keep Claude fluent in your own code](#the-pipeline-workflow-keep-claude-fluent-in-your-own-code)
-18. [distill: filtering noisy research-command output](#distill-filtering-noisy-research-command-output)
-19. [GitHub README and LaTeX](#github-readme-and-latex)
+15. [Settings and hooks](#settings-and-hooks)
+16. [Group projects: shared vs personal configuration](#group-projects-shared-vs-personal-configuration)
+17. [Reducing token consumption: rtk](#reducing-token-consumption-rtk)
+18. [The pipeline workflow: keep Claude fluent in your own code](#the-pipeline-workflow-keep-claude-fluent-in-your-own-code)
+19. [distill: filtering noisy research-command output](#distill-filtering-noisy-research-command-output)
+20. [GitHub README and LaTeX](#github-readme-and-latex)
 
 **[Part IV: What Claude gets wrong](#part-iv-what-claude-gets-wrong)** — *required reading*
 
-20. [Honest limitations](#honest-limitations)
+21. [Honest limitations](#honest-limitations)
 
 **[Appendix](#appendix)**
 
-21. [Templates and scripts in this repo](#templates-and-scripts-in-this-repo)
-22. [The ChatGPT twin: chatgpt-for-researchers](#the-chatgpt-twin-chatgpt-for-researchers)
-23. [Using both: Claude and Codex on one project](#using-both-claude-and-codex-on-one-project)
+22. [Templates and scripts in this repo](#templates-and-scripts-in-this-repo)
+23. [The ChatGPT twin: chatgpt-for-researchers](#the-chatgpt-twin-chatgpt-for-researchers)
+24. [Using both: Claude and Codex on one project](#using-both-claude-and-codex-on-one-project)
 
 ---
 
@@ -1517,6 +1518,178 @@ not to stop reading it.
 The template is [`starter/BUGS.md`](starter/BUGS.md) — the section skeleton, the
 legend, the standing rule, and a small set of starting entries that are true in
 almost any computational project.
+
+---
+
+## Claim discipline: name only what you computed
+
+[`BUGS.md`](#bugsmd-the-recurring-mistake-registry) catches mistakes in a *calculation*.
+This section is about the two mistakes that happen on either side of one: choosing which
+case to test, and choosing what to call the result. Both are cheap to fix and expensive to
+leave, and neither produces an error message.
+
+### The two failure modes
+
+**Escalating after a failure.** A mechanism is proposed for a whole family. It fails at the
+smallest case. The next thing tried is a *bigger* one — a higher order, another parameter,
+a richer ansatz — on the unstated hope that the missing structure will show up there. This
+is the single most expensive pattern in agent-assisted research, because it converts a
+five-minute counterexample into a fortnight of work, and every run along the way looks like
+progress. It also has the wrong shape logically: a failure at the simplest admissible case
+*is* a counterexample to a claim that was made about every case.
+
+**Naming more than you computed.** The calculation is right; the noun is wrong. The code
+built a leading term and the summary says "the operator". The code applied a sign flip
+twice and the label says "an involution on the actual data". The number is correct in both,
+and the sentence is not.
+
+### The simple-case gate
+
+Before computing: identify the **simplest admissible nondegenerate case**, and make the
+*exact* proposal pass there before increasing anything. "Admissible" and "nondegenerate"
+are doing real work — a case where the thing you are probing vanishes identically will pass
+for free and tell you nothing.
+
+If it fails, the rule is **stop escalating**: preserve the first exact residual and diagnose
+it. Is it an implementation bug, a convention mismatch, a degenerate test, a false auxiliary
+assumption, or the idea being wrong? Repair the proposal on that same case, or narrow the
+claim. A modified proposal is a *new* proposal and restarts the gate.
+
+The one legitimate escape is deriving the exclusion, not asserting it. "That case is
+degenerate" is a fine reason to skip a case — if it follows from the domain you stated
+before you ran the test. Said for the first time immediately after the case broke your
+proposal, it is not a reason, it is a reflex.
+
+The [`simple-case-gate`](starter/.claude/skills/simple-case-gate/SKILL.md) skill is the
+workflow, and there is a matching non-negotiable block in
+[`starter/CLAUDE.md`](starter/CLAUDE.md) so it applies without being invoked.
+
+### The claim audit, and where a claim is actually minted
+
+Here is the part worth internalising, because it tells you *where to intervene*.
+
+An overclaim is not written in the summary. It is minted earlier, in the **label on a
+check** — and the summary, the commit message, the changelog row and the workbook section
+then all inherit that label, because they are written in the same pass, from the same
+context, by the same process. By the time prose is being drafted, the claim is being
+*copied*, not made. Auditing the summary audits the copy.
+
+That has a structural consequence. If nobody reads the label against the body, the **first
+adversarial reader of a result is whoever you send it to** — your collaborator, a referee,
+or a second agent. Of course they find something; nothing upstream of them ever tested the
+claim against a hostile reading. The fix is to do that read yourself, before the claim
+leaves the session: **script passes → audit → prose**, never prose first.
+
+The audit has one load-bearing step, the **computed-object ledger**. One row per headline
+you intend to write, filled left to right:
+
+| symbol **literally constructed in the code** | restriction actually established | headline as drafted |
+|---|---|---|
+| `L = A @ D` (leading term only) | leading order; no higher term exists in the file | ~~"the full operator is constructed"~~ |
+
+The rule that does the work: **a noun in column 3 that does not appear in column 1 is
+banned.** Writing the columns left to right is not a stylistic preference — writing column 3
+first and reverse-engineering column 1 is exactly the failure being prevented.
+
+Then, for every check, ask the question that makes labels honest: **what is the weakest
+statement that makes this body pass?** Make *that* the label. Three things kill a check:
+
+1. **It is true for every input of its type.** `M @ M.T` is symmetric for every `M`.
+   `f(a) - f(a) == 0`. A determinant is nonzero on a matrix you assembled to be invertible.
+   The test: substitute a random object of the same type. If it still passes, it says
+   nothing about yours.
+2. **It was evaluated where it cannot bite** — a degenerate case, a vanishing leading term,
+   one sampled point standing in for a general statement.
+3. **It tests your typing rather than the mathematics.** A value assigned by hand, with a
+   later check confirming a consequence of it, holds because the algebra is consistent with
+   your typing. Every hand-assignment is *assumed*; downstream checks say "consistent with
+   the assumption", never "derived".
+
+And the cheapest tell of all, which costs nothing to apply:
+
+> **If you are writing a sentence explaining why a check is *not* trivial, the check is
+> trivial.** That sentence is advocacy. It is generated by anticipating the objection, not
+> by reading the body — which is why it tends to appear on the same line as the flaw it
+> denies. Delete the defence and read the body.
+
+### Label your checks, or there is nothing to audit
+
+All of this needs your checks to carry labels. The change is small:
+
+```python
+def gate(label, ok):
+    print(("PASS  " if ok else "FAIL  ") + label)
+    return ok
+
+gate("R vanishes at n=1 to 30 digits", abs(R) < 1e-30)
+```
+
+Five lines, and it buys three things. The check now has a written claim attached at the
+moment you understood it, instead of a sentence invented later from memory. The label and
+the body sit on the same line, so comparing them is possible at all. And a mechanical
+pre-filter can read them:
+
+```bash
+bash .claude/skills/claim-audit/gate_audit.sh numerics/my_script.py
+```
+
+[`gate_audit.sh`](starter/.claude/skills/claim-audit/gate_audit.sh) reports four things:
+values assigned by hand, labels over the length budget, advocacy language in labels, and
+bodies whose *shape* may be true for every input. It reads both the `gate(...)` and
+`gate[...]` forms, so Python, Julia and Wolfram all work.
+
+Two honest limits. It is a **pre-filter, not a verdict** — it cannot read mathematics, and a
+clean run means "no cheap tell fired", never "the labels are honest". And if it finds no
+labelled checks it says so loudly and exits non-zero, rather than printing an all-clear on a
+file it could not parse: a silent clean report is the one failure that would make a tool like
+this worse than useless.
+
+### The report shape, and one tag per claim
+
+The report — a summary to you, a commit message, a changelog row, a message to another
+agent — carries four things in order: **what was computed** (the ledger's column 1, with its
+restrictions), **what that licenses**, **what it explicitly does not establish** (never
+omitted, never softened to "further work will show"), and **which checks were vacuous**.
+
+Each claim also carries a status, and being specific here is what stops a partial result
+inflating into the thing it is not:
+
+`definition` · `exact identity` · `proved theorem` · `conditional theorem` ·
+`finite verification` · `numerical evidence` · `conjecture` · `obstruction`
+
+The two easy ones to conflate are the middle pair. **Finite verification** is exact but
+bounded — you checked every case in a stated finite range. **Numerical evidence** is
+approximate — agreement to N digits at sampled points. Both are real evidence at their
+stated range and neither is an all-cases claim; an all-cases claim needs a symbolic
+identity, an induction, a uniqueness argument, or a cited theorem whose hypotheses you
+checked. `obstruction` is worth its own slot because a proved negative is a genuine result
+and tends to get filed as a failure.
+
+This is the fine-grained version of the
+[trust ledger](#make-epistemic-status-explicit-a-trust-ledger); the three-way tags in
+`brief.tex` (ESTABLISHED / CONJECTURED / OPEN) and in the overview document are deliberate
+*coarsenings* of it for documents that need to be skimmable. Keep the fine status with the
+result in `workbook.tex` and let the summaries coarsen.
+
+A last one, for projects where two agents or two people exchange results: **separate the
+verdict from the new claim**. A line reading "confirmed, all corrections accepted — and this
+round establishes X" lets an acceptance token launder a claim nobody has read. The
+acceptance was real; X was not audited. Two claims, two lines. And never promote an accepted
+correction into a stronger claim than the corrector made — "the obstacle is not where you
+said" does not become "the obstacle is gone".
+
+### Wiring it in
+
+- Two skills: [`simple-case-gate`](starter/.claude/skills/simple-case-gate/SKILL.md)
+  (before computing) and [`claim-audit`](starter/.claude/skills/claim-audit/SKILL.md)
+  (after the script passes, before prose).
+- Two non-negotiable blocks in [`starter/CLAUDE.md`](starter/CLAUDE.md) — *Simple-case gate*
+  and *Research-claim discipline* — so the rules apply when nobody invokes a skill.
+- Two sections in [`starter/BUGS.md`](starter/BUGS.md), **H** (escalation) and **I** (claim
+  generation), so a specific instance can be cited later the way any other trap is.
+
+The bootstrap script installs all of it. Both skills are cheap: `simple-case-gate` is 42
+lines and `claim-audit` is read only when a result is about to be written up.
 
 ---
 
@@ -3051,7 +3224,7 @@ them cheerfully.
 
 The fix is to force the tag. Give every result an explicit **epistemic status**,
 and keep a short **honesty ledger** that lists what a claimed proof still
-*assumes*. A workable set of levels:
+*assumes*. The minimum workable set of levels:
 
 - **Theorem** — proved, or machine-checked.
 - **Numerically verified to N digits** — the structure is established, but the
@@ -3059,6 +3232,14 @@ and keep a short **honesty ledger** that lists what a claimed proof still
 - **Argument modulo stated inputs** — rigorous *if* the listed inputs hold; the
   inputs are named, not hidden.
 - **Open** — genuinely unproven.
+
+Four levels are enough to start and enough for a skimmable summary document. Once a
+project is large enough that "verified" is doing too much work, the finer eight-status
+vocabulary under
+[claim discipline](#claim-discipline-name-only-what-you-computed) splits the two
+distinctions these four blur: exact-but-bounded (`finite verification`) against
+approximate (`numerical evidence`), and a proved *negative* (`obstruction`) against
+simply `open`. Coarsen for `brief.tex`, keep the fine tag with the result.
 
 Making the tag mandatory — and separately listing what a proof leans on — keeps the
 status honest and makes the remaining work obvious. It is exactly what stops a
@@ -3150,6 +3331,8 @@ starter/
         ├── verify-citation/SKILL.md ← /verify-citation skill
         ├── reality-check/SKILL.md   ← /reality-check skill
         ├── cross-validate/SKILL.md  ← /cross-validate skill
+        ├── simple-case-gate/SKILL.md ← /simple-case-gate skill: gate a proposal on the simplest case before escalating
+        ├── claim-audit/             ← /claim-audit skill (SKILL.md + gate_audit.sh): audit a passing script before writing prose
         ├── overleaf-sync/SKILL.md   ← /overleaf-sync skill
         ├── write-pipeline/          ← (pipeline workflow — optional) /write-pipeline skill (SKILL.md + dump_code.py)
         ├── check-pipeline/SKILL.md  ← (pipeline workflow — optional) /check-pipeline skill
@@ -3187,6 +3370,8 @@ in Part I.
 | [`starter/.claude/skills/verify-citation/SKILL.md`](starter/.claude/skills/verify-citation/SKILL.md) | Skill: verify a paper exists on Semantic Scholar / arXiv before writing it as a citation |
 | [`starter/.claude/skills/reality-check/SKILL.md`](starter/.claude/skills/reality-check/SKILL.md) | Skill: re-derive a contested result in isolation to detect sycophantic capitulation |
 | [`starter/.claude/skills/cross-validate/SKILL.md`](starter/.claude/skills/cross-validate/SKILL.md) | Skill: format a physics claim for cross-model validation against Gemini or ChatGPT |
+| [`starter/.claude/skills/simple-case-gate/SKILL.md`](starter/.claude/skills/simple-case-gate/SKILL.md) | `/simple-case-gate` skill: gate a proposed mechanism, ansatz, recursion or claimed-universal identity on the **simplest admissible nondegenerate case** before increasing order, weight, rank or free parameters — and, when that case fails, stop escalation and diagnose instead. A modified proposal restarts the gate |
+| [`starter/.claude/skills/claim-audit/`](starter/.claude/skills/claim-audit/) | `/claim-audit` skill (SKILL.md + `gate_audit.sh`): the hostile read of your own result, run after the script passes and **before** any prose exists. The computed-object ledger (symbol literally built in the code → restriction actually established → headline, banning a headline noun absent from the code), the weakest-statement rewrite of every check label, and the report shape that must name what the result does *not* establish. `gate_audit.sh` is the mechanical pre-filter — hand-assigned values, over-budget labels, advocacy language, and bodies true for every input; it exits non-zero rather than printing an all-clear on a file it could not parse |
 | [`starter/.claude/skills/overleaf-sync/SKILL.md`](starter/.claude/skills/overleaf-sync/SKILL.md) | Skill: sync a git clone of a shared Overleaf project — status/pull/diff, and a safe merge-only publish |
 | [`starter/.claude/skills/write-pipeline/SKILL.md`](starter/.claude/skills/write-pipeline/SKILL.md) | Skill (pipeline workflow): write/refresh a `Pipeline/` doc mapping a big code's data flow, key symbols, and gotchas so Claude reads the map before the source. Ships `dump_code.py` (renders a `.wb`/`.ipynb` notebook to a readable outline + full dump) |
 | [`starter/.claude/skills/check-pipeline/SKILL.md`](starter/.claude/skills/check-pipeline/SKILL.md) | Skill (pipeline workflow): drift check — verify every symbol, cell number, data file, and I/O claim in a pipeline doc still matches the code; classify BROKEN vs STALE; fix the *doc* (code is ground truth) on approval |

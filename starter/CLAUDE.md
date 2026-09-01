@@ -119,6 +119,66 @@ Two rules from that file apply to everything you report, not just to code:
 - **A control that cannot fail is worse than no control.** Before calling a control passed,
   state what it could have detected; if the answer is "nothing", call it **vacuous**.
 
+## Simple-case gate (NON-NEGOTIABLE)
+<!-- Stops the most expensive failure mode in research: a proposal fails, and the response
+     is to try something harder instead of confronting the failure. -->
+
+For every proposed mechanism, proof strategy, ansatz, recursion, or claimed-universal
+identity: identify the **simplest admissible nondegenerate case** and make the exact
+proposal pass there **before** increasing order, weight, depth, rank, dimension, or the
+number of free parameters.
+
+If it genuinely fails, preserve the first exact residual and **stop escalating**. Diagnose
+whether the cause is an implementation error, a convention mismatch, a degenerate test, a
+false auxiliary assumption, or failure of the idea — then repair the proposal on that same
+case, or narrow it. Never try a harder case hoping that added complexity will rescue an
+idea that was claimed to hold in every case. A modified proposal is a new proposal and
+restarts the gate. A simple case may be skipped only if its exclusion follows from the
+stated domain — never if the exclusion was invented after the failure.
+
+Passing the base case licenses the next test. It is not a proof of the general claim.
+Use `/simple-case-gate` for the full workflow.
+
+## Research-claim discipline (NON-NEGOTIABLE)
+<!-- "Verified" silently spans everything from "proved it" to "checked one case and it
+     looked right". Forcing a status tag is what stops a partial result from inflating. -->
+
+**Every headline claim carries one of these statuses**, written down next to it:
+
+`definition` · `exact identity` · `proved theorem` · `conditional theorem` ·
+`finite verification` · `numerical evidence` · `conjecture` · `obstruction`
+
+Never substitute "structural", "canonical", "expected", "natural", or "essentially" for a
+proof status. The coarser three-way tags used in `brief.tex` (ESTABLISHED / CONJECTURED /
+OPEN) and in the overview document are *summaries* of these — when a claim is tagged there,
+the finer status stays with it in `workbook.tex`.
+
+- A **conditional theorem** must list **all** its unproved inputs at the point of use. Moving
+  an obligation somewhere else requires saying where it now lives; nothing may disappear by
+  being renamed.
+- **Finite verification and numerical evidence are evidence at their stated range only.** An
+  all-cases claim needs a symbolic identity, an induction, a uniqueness argument, or a cited
+  theorem whose hypotheses you checked.
+- Before writing **necessary**, **sufficient**, or **equivalent**, write the implication in
+  symbols and check both directions separately. A failed sufficient route is not a
+  counterexample to the target.
+- Before writing **unique** or **canonical**, exhibit the ambiguity group of the stated class
+  and show it is trivial. Arguing from your own prescription proves nothing — a prescription
+  picks a representative by construction. When the ambiguity is not trivial, the provable
+  statement is usually that the data you actually use are invariant under it: prove that, and
+  write **well defined**.
+- **No node in a derivation may use the desired conclusion, or anything downstream of it, as
+  an input.** Sketch the dependency order before a long calculation and check it for cycles.
+- A script that re-runs known data, imports a saved pass flag, or checks for the absence of a
+  string is a **regression test**. It does not re-prove the statement upstream of it.
+- **"The script passed" is not a verdict.** Record: the exact statement, its assumptions, the
+  definitions used, the script, which controls could have failed, and the scope not covered.
+
+**Audit the claim before writing any prose about it.** The overclaim is minted in the label
+on a check, not in the summary — and the summary, commit message, `CHANGELOG.md` row and
+workbook section all inherit it. Order of operations: **script passes → `/claim-audit` →
+prose.** Never prose first.
+
 ## Citations (NON-NEGOTIABLE)
 <!-- Prevents fabricated references. Claude invents citations with full confidence. -->
 
@@ -153,6 +213,10 @@ script. Never include `generated/` content in workbook.tex without my explicit i
 - `/verify-citation` — verify a paper exists before writing it as a citation.
 - `/reality-check` — re-derive a contested result in isolation to detect sycophancy.
 - `/cross-validate` — format a physics claim for cross-model validation.
+- `/simple-case-gate` — gate a proposed mechanism, ansatz or universal claim on the
+  simplest admissible case. Use BEFORE computing, and again after any modification.
+- `/claim-audit` — audit what a passing script actually established, before writing prose.
+  Use AFTER the script passes and BEFORE any summary, commit message or workbook section.
 - `/overleaf-sync` — sync the `Overleaf/` git clone of a shared paper: status/pull/diff/publish.
   Only if you collaborate on Overleaf via its git remote. Remove this line otherwise.
 - `/write-pipeline`, `/check-pipeline`, `/apply-pipeline` — the Pipeline workflow (see the

@@ -13,6 +13,66 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.09 · v1.16.0 — 2026-09-01
+
+Two disciplines that sit either side of a calculation: choosing which case to test, and
+choosing what to call the result. Neither produces an error message, and both are cheap.
+
+### Added
+- **New guide section, [Claim discipline: name only what you computed](README.md#claim-discipline-name-only-what-you-computed)**
+  (Part II, section 9 — the Table of Contents renumbers 9–23 to 10–24). It covers the two
+  failure modes: escalating to a harder case after a proposal fails at the simplest one, and
+  naming more than you computed.
+- **[`simple-case-gate`](starter/.claude/skills/simple-case-gate/SKILL.md) skill** — identify
+  the simplest admissible nondegenerate case and make the *exact* proposal pass there before
+  increasing order, weight, rank, dimension, or free parameters. When it fails, preserve the
+  first exact residual and **stop escalating**: diagnose, then repair on that same case or
+  narrow the claim. A modified proposal is a new proposal and restarts the gate. A simple case
+  may be skipped only if the exclusion follows from the domain you stated *before* the test.
+- **[`claim-audit`](starter/.claude/skills/claim-audit/SKILL.md) skill** — the hostile read of
+  your own result, run after the script passes and **before** any prose exists. The idea it is
+  built on: an overclaim is not written in the summary, it is minted in the **label on a
+  check**, and the summary, commit message, changelog row and workbook section then inherit it
+  because they are written in one pass from one context. Auditing the summary audits the copy.
+  The skill's load-bearing step is the *computed-object ledger* — symbol literally constructed
+  in the code → restriction actually established → headline — with the rule that a headline
+  noun absent from the code is banned. Plus the weakest-statement rewrite of every label, and
+  the tell that costs nothing: if you are writing a sentence explaining why a check is not
+  trivial, the check is trivial.
+- **`gate_audit.sh`**, claim-audit's mechanical pre-filter: hand-assigned values, labels over
+  the length budget, advocacy language in labels, and bodies whose shape is true for every
+  input (`M @ M.T` is symmetric for every `M`; a determinant is nonzero on a matrix assembled
+  to be invertible). It reads both `gate("label", body)` and `gate[...]`, so Python, Julia and
+  Wolfram all work — and it **exits non-zero and says so loudly when it parses no labelled
+  checks**, rather than printing an all-clear on a file it could not read. A pre-filter that
+  silently passes anything it cannot parse is worse than no pre-filter.
+- Two non-negotiable blocks in [`starter/CLAUDE.md`](starter/CLAUDE.md) — *Simple-case gate*
+  and *Research-claim discipline* — so both rules apply when nobody invokes a skill. The
+  latter carries the status vocabulary every headline claim must wear, and the rules on
+  "necessary"/"sufficient"/"unique"/"canonical", conditional theorems, and dependency cycles.
+- Two new sections in [`starter/BUGS.md`](starter/BUGS.md): **H** (strategy selection and
+  escalation) and **I** (claim generation — naming more than you computed).
+- Both skills install as **universal core** in `scripts/bootstrap.sh`. They are not gated on
+  the project having code: the `CLAUDE.md` blocks reference them by name, so a conditional
+  install would leave a dangling `/command` — and every project makes claims.
+
+### Changed
+- **The epistemic-status vocabulary is now one vocabulary with documented coarsenings.** The
+  [trust ledger](README.md#make-epistemic-status-explicit-a-trust-ledger)'s four levels stay
+  as the minimum workable set, and now point at the finer eight-status list, which splits the
+  two distinctions the four blur: exact-but-bounded (`finite verification`) against
+  approximate (`numerical evidence`), and a proved negative (`obstruction`) against simply
+  `open`. The three-way tags in `brief.tex` and the overview document are named as deliberate
+  coarsenings rather than a third competing scheme.
+
+### Action needed
+- Optional. Existing projects: copy `starter/.claude/skills/simple-case-gate/` and
+  `starter/.claude/skills/claim-audit/` into `.claude/skills/`, and add the *Simple-case gate*
+  and *Research-claim discipline* sections from [`starter/CLAUDE.md`](starter/CLAUDE.md) to
+  your own. If you want `gate_audit.sh` to be able to read your scripts, wrap your checks as
+  `gate("short neutral label", <expression>)` — that is the change that makes labels auditable
+  at all, and it is worth doing even if you never run the script.
+
 ## v2026.08 · v1.15.0 — 2026-08-25 (update)
 
 ### Added

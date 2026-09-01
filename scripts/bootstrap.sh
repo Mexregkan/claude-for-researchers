@@ -121,6 +121,9 @@ chmod +x .claude/hooks/*.sh 2>/dev/null
 say "  -> BUGS.md is the recurring-mistake registry: one symptom -> cause -> guard entry"
 say "     per class of mistake, read before writing any code. It ships with generic"
 say "     starting entries; replace them with your own as the project bites you."
+say "  -> /simple-case-gate before you compute, /claim-audit after the script passes and"
+say "     BEFORE you write it up. claim-audit's gate_audit.sh reads checks written as"
+say "     gate(\"short neutral label\", <expression>) — wrap your checks that way."
 say "  -> git-committer is the commit-and-push sub-agent (every commit goes through it,"
 say "     so nothing ever gets \`git add .\`-ed by accident). FILL IN its two project"
 say "     blocks: your repos + remotes + push order, and your protected files."
@@ -154,6 +157,11 @@ say ""
 say "Skills (by relevance):"
 skill latex-compile
 skill sync-brief
+# Universal core: CLAUDE.md's "Simple-case gate" and "Research-claim discipline" blocks
+# reference these by name, so installing them conditionally would leave a dangling /command.
+# Both are inert until invoked, and every project makes claims — even one with no code.
+skill simple-case-gate
+skill claim-audit gate_audit.sh
 [ "$CITE" -eq 1 ]     && skill verify-citation
 if [ "$VALID" -eq 1 ]; then skill reality-check; skill cross-validate; fi
 case $NUMERICS in mathematica|both)
