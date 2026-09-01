@@ -13,6 +13,39 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.08 · v1.15.0 — 2026-08-25 (update)
+
+### Added
+- **A commit-and-push sub-agent, [`git-committer`](starter/.claude/agents/git-committer.md)**
+  — the second agent to ship in `starter/`, and the first that is not tied to an optional
+  workflow. The idea: stop letting the main session run `git commit` at all. A research
+  working tree is almost never clean, and a session that is deep in a long task reaches for
+  `git add -A`; your half-finished workbook section then lands in the permanent record
+  attached to somebody else's commit message. The agent stages **only** the files it was
+  named — never `git add .`, `-A`, `-u`, or a glob it expanded itself — appends nothing to
+  your message (no `Co-Authored-By`), refuses the protected files you list, pushes to each
+  remote in the order you gave, and reports git's own output verbatim. A rejected push stops
+  and reports; it never pulls, merges, rebases, or forces on its own.
+- Two details in its definition are the reusable pattern: `tools: Bash, Read` means it has no
+  edit tool at all, so "it never modifies your files" is enforced by the platform rather than
+  promised in a prompt; and `model: haiku` keeps a mechanical job on a cheap model, so
+  invoking it fifty times a day costs nothing worth thinking about.
+- New guide subsection, **"Give commits to a dedicated sub-agent"**, in
+  [Git workflow for academics](README.md#git-workflow-for-academics) — the failure mode, the
+  rules and why each one is there, and the two project blocks you fill in (your repos with
+  their remotes and push order, and your protected files). If your tree contains a nested
+  repo — a sub-project with its own remote, or a cloned `Overleaf/` — you list it there with
+  its own rule, including "never push this one", so the agent cannot publish to a shared
+  paper by accident.
+- The bootstrap script installs it as part of the **universal core** (every project commits),
+  and the README's bootstrapping prompt tells Claude to fill in its project blocks in
+  session 1.
+
+### Action needed
+- Optional. Existing projects: copy
+  [`starter/.claude/agents/git-committer.md`](starter/.claude/agents/git-committer.md) into
+  `.claude/agents/` and fill in its two project blocks. Nothing else changes if you don't.
+
 ## v2026.08 · v1.14.1 — 2026-08-14 (fix)
 
 ### Fixed

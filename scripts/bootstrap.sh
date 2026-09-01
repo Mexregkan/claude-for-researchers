@@ -106,7 +106,7 @@ yesno "Will a SECOND agent (e.g. Codex) also work in this repo? (adds handoff/, 
 
 say ""
 say "Core files (universal — every project gets these):"
-mkdir -p .claude/hooks .claude/skills
+mkdir -p .claude/hooks .claude/skills .claude/agents
 core starter/CLAUDE.md                        CLAUDE.md
 core starter/workbook.tex                     workbook.tex
 core starter/brief.tex                        brief.tex
@@ -116,10 +116,14 @@ core starter/.gitignore                       .gitignore
 core starter/.claude/settings.json            .claude/settings.json
 core starter/.claude/hooks/pre-compact.sh     .claude/hooks/pre-compact.sh
 core starter/.claude/hooks/promise-checker.sh .claude/hooks/promise-checker.sh
+core starter/.claude/agents/git-committer.md  .claude/agents/git-committer.md
 chmod +x .claude/hooks/*.sh 2>/dev/null
 say "  -> BUGS.md is the recurring-mistake registry: one symptom -> cause -> guard entry"
 say "     per class of mistake, read before writing any code. It ships with generic"
 say "     starting entries; replace them with your own as the project bites you."
+say "  -> git-committer is the commit-and-push sub-agent (every commit goes through it,"
+say "     so nothing ever gets \`git add .\`-ed by accident). FILL IN its two project"
+say "     blocks: your repos + remotes + push order, and your protected files."
 
 # Big-project templates (optional): the equation-light overview doc, the strategy
 # map, and the research changelog. Only useful once a project is large /

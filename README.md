@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.08 · v1.14.1** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.08 · v1.15.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -258,6 +258,14 @@ soften it.
 > - `.claude/settings.json` (from `starter/.claude/settings.json`)
 > - `.claude/hooks/pre-compact.sh` and `.claude/hooks/promise-checker.sh`
 > - `.gitignore` (from `starter/.gitignore`)
+>
+> **Copy this one and then fill it in:** `.claude/agents/git-committer.md` (from
+> `starter/.claude/agents/git-committer.md`) — the sub-agent that does every commit
+> and push. Replace the two clearly-marked project blocks with my real repos (their
+> remotes and push order, including any nested repo such as an `Overleaf/` clone that
+> must never be pushed) and my protected files. Ask me for anything you do not know;
+> do not guess a remote. From now on, use this agent for every commit and push instead
+> of running `git commit` yourself.
 >
 > **Install skills by relevance — NOT all of them.** The four generated files
 > below are universal; skills are not. From my project description, decide which
@@ -2005,6 +2013,71 @@ automatically after every push to GitHub. You can also ask Claude to keep an
 experimental branch on only one remote until you are ready to publish it — just
 tell it which remote to use.
 
+### Give commits to a dedicated sub-agent
+
+Once you have told Claude your git setup, there is one more step that is worth more
+than it looks: stop letting the main session run `git commit` and `git push` at all,
+and hand every commit to a **sub-agent** whose only job is committing.
+
+A sub-agent is a second Claude with its own context window, its own instructions,
+and — importantly — its own restricted tool set. You define one as a Markdown file
+in `.claude/agents/`; the main session spawns it, it does its job, and it returns a
+short report. Nothing it read along the way lands in your session's context.
+
+**Why a committer deserves one.** The failure mode is specific and it is expensive.
+Your working tree in a research project is almost never clean: a half-edited section
+of `workbook.tex`, a scratch script, an experiment you have not decided about. When
+the main session — deep in a long task, context half-full — is asked to "commit the
+new numerics", the tempting shortcut is `git add -A`. Now your half-finished section
+is in the permanent record, attached to a commit message about something else, and
+you will not notice until you go looking for it weeks later. The same shortcut is
+how a `Co-Authored-By` trailer, a force-push, or a commit on the wrong branch gets
+in. None of these are hard mistakes to avoid; they are mistakes of *attention*, and
+a fresh agent with one instruction has attention to spare.
+
+The starter ships [`git-committer`](starter/.claude/agents/git-committer.md). Its
+rules are the ones that have actually cost people something:
+
+- **Stage only the files the caller names** — never `git add .`, `-A`, `-u`, or a
+  glob the agent expanded itself. This one rule is most of the value.
+- The commit message is **exactly** what was passed. Nothing appended.
+- Named protected files (the ones you write by hand) stop the commit rather than
+  going in.
+- Push to every remote you listed, in order, and report git's own output verbatim.
+- A rejected push stops and reports. It never pulls, merges, rebases, or forces on
+  its own initiative — the remote moved, and only you can decide why.
+
+Its front matter is worth reading as a pattern:
+
+```yaml
+---
+name: git-committer
+description: Commits and pushes for this project. Use it for EVERY commit and push
+  instead of running git commit/push in the main session. …
+tools: Bash, Read
+model: haiku
+---
+```
+
+`tools: Bash, Read` is the real safety rail: the agent has no `Edit` or `Write` tool,
+so "it never modifies your files" is a property of the platform rather than a promise
+in a prompt. `model: haiku` is deliberate too — staging a named list and running
+`git commit` is mechanical work that does not need your best (or most expensive)
+model, and a cheap agent you are happy to invoke fifty times a day is one you will
+actually use. And because Claude picks agents by their `description`, wording it as
+"use it for EVERY commit" is what makes the main session delegate instead of reaching
+for `git commit` itself.
+
+**Setting it up.** Copy the file into `.claude/agents/` (the bootstrap script does
+this for you), then fill in the two clearly-marked project blocks: your repos with
+their remotes and push order, and your protected files. That is the whole setup. If
+your tree contains a nested repo — a sub-project with its own remote, or a cloned
+`Overleaf/` (next section) — list it there with its own push rule, including "never
+push this one", so the agent can never publish to a shared paper by accident.
+
+Then just work normally. "Commit the new script and push" now goes to an agent that
+will come back with a hash, a file list, and the remote's exact reply.
+
 ### Working with a shared Overleaf project (git clone)
 
 Most collaborative papers live on Overleaf, but Claude Code cannot see an Overleaf
@@ -3065,6 +3138,7 @@ starter/
     │   ├── pipeline-guard.sh        ← (pipeline workflow — optional) PostToolUse nudge; self-quiets until a Pipeline/ doc exists
     │   └── pipeline-coverage.sh     ← (pipeline workflow — optional) on-demand coverage check
     ├── agents/
+    │   ├── git-committer.md         ← commit-and-push sub-agent: stages only what it was named, never `git add .`
     │   └── pipeline-auditor.md      ← (pipeline workflow — optional) read-only bug/optimization auditor sub-agent
     └── skills/
         ├── latex-compile/SKILL.md   ← /latex-compile skill
@@ -3117,6 +3191,7 @@ in Part I.
 | [`starter/.claude/skills/write-pipeline/SKILL.md`](starter/.claude/skills/write-pipeline/SKILL.md) | Skill (pipeline workflow): write/refresh a `Pipeline/` doc mapping a big code's data flow, key symbols, and gotchas so Claude reads the map before the source. Ships `dump_code.py` (renders a `.wb`/`.ipynb` notebook to a readable outline + full dump) |
 | [`starter/.claude/skills/check-pipeline/SKILL.md`](starter/.claude/skills/check-pipeline/SKILL.md) | Skill (pipeline workflow): drift check — verify every symbol, cell number, data file, and I/O claim in a pipeline doc still matches the code; classify BROKEN vs STALE; fix the *doc* (code is ground truth) on approval |
 | [`starter/.claude/skills/apply-pipeline/SKILL.md`](starter/.claude/skills/apply-pipeline/SKILL.md) | Skill (pipeline workflow): the write-side inverse — apply an optimization the doc names or fix code the doc (backed by your notes) shows is wrong, guardrailed with a diff preview, ground-truth protection, and a control re-run |
+| [`starter/.claude/agents/git-committer.md`](starter/.claude/agents/git-committer.md) | Sub-agent: does every commit and push, so the main session never runs `git commit` itself. Stages only the files it was named (never `git add .`), refuses protected files, appends nothing to your message, pushes to each remote in order, and reports git's own output. `tools: Bash, Read` — no edit tool, by construction |
 | [`starter/.claude/agents/pipeline-auditor.md`](starter/.claude/agents/pipeline-auditor.md) | Sub-agent (pipeline workflow): read-only auditor that reads a pipeline doc + its code together and hunts real bugs and concrete optimizations, ranked by what it verified — it reports, never edits |
 | [`starter/.claude/hooks/pipeline-guard.sh`](starter/.claude/hooks/pipeline-guard.sh) | PostToolUse hook (pipeline workflow, opt-in): after a code edit nudges `/check-pipeline` (+ an auditor pass); after a pipeline-doc edit nudges `/apply-pipeline`. Nudge-only; self-quiets until a `Pipeline/` doc exists |
 | [`starter/.claude/hooks/pipeline-coverage.sh`](starter/.claude/hooks/pipeline-coverage.sh) | On-demand check (pipeline workflow): flags any main code without a pipeline doc and any orphan doc; quiet ("no pipeline docs yet") until you adopt the workflow |
@@ -3160,7 +3235,7 @@ agent-specific wiring:
 | Global skills: `~/.claude/skills/` | User-scope skills: `~/.agents/skills/` |
 | Hooks declared in `.claude/settings.json` | Hooks declared in `.codex/hooks.json`; each script must be trusted once via `/hooks` |
 | Dual-remote mirror: a `PostToolUse` matcher on `Bash(git push github*)` | A `git-mirror.sh` hook that filters the pushed command itself |
-| Sub-agent: `.claude/agents/pipeline-auditor.md` | `.codex/agents/pipeline-auditor.toml`, with a platform-enforced read-only sandbox |
+| Sub-agents: `.claude/agents/<name>.md` (`git-committer`, `pipeline-auditor`); a `tools:` line restricts the agent's toolset | `.codex/agents/<name>.toml`; `sandbox_mode` restricts the *filesystem*, but there is no per-agent tool allowlist — so a read-only agent is enforced harder in Codex, and a write-capable one (the committer) is enforced only by its instructions |
 | Plan mode: Shift+Tab or `--permission-mode plan` | `/plan` (plus `codex --sandbox read-only` for hard read-only) |
 | Context meters: `/context`, `/usage` | `/status`, `/usage` |
 | Fresh-session reality check: open a new session | `codex exec --sandbox read-only "…"` — non-interactive and isolated |
