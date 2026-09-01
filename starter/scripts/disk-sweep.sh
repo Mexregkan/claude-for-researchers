@@ -163,11 +163,13 @@ sweep_repo() {
   while IFS= read -r -d '' rel; do
     local f="$repo/$rel"
     [ -f "$f" ] || continue
-    if [ -n "$SWEEP_KEEP_RE" ] && printf '%s' "$rel" | grep -qE "$SWEEP_KEEP_RE"; then
-      KEPT=$((KEPT+1)); continue
-    fi
+    # Age filter FIRST, keep-list second: a protected file that was never a candidate
+    # (too new) must not be counted as "protected", or the tool overstates what it saved.
     if [ $# -gt 0 ] && ! find "$f" "$@" -print -quit 2>/dev/null | grep -q .; then
       continue
+    fi
+    if [ -n "$SWEEP_KEEP_RE" ] && printf '%s' "$rel" | grep -qE "$SWEEP_KEEP_RE"; then
+      KEPT=$((KEPT+1)); continue
     fi
     remove "$f"; SWEPT=$((SWEPT+1))
   done < <(git -C "$repo" ls-files -z --others --ignored --exclude-standard -- "$glob" 2>/dev/null)

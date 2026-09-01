@@ -13,6 +13,16 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.09 · v1.17.3 — 2026-09-01 (fix)
+
+### Fixed
+- **`disk-sweep.sh` overstated how much it protected.** The keep-list was checked *before* the
+  age filter, so files that were never deletion candidates in the first place (too new) were
+  counted as rescued — one project reported `protected: 105` where 88 were real. The filter now
+  runs first and the count reflects what the keep-list actually saved. A reassuring number that
+  nobody had audited is the same failure class as everything in `BUGS.md` §I; it is worth
+  noticing that it appeared in the reporting of the tool built to prevent it.
+
 ## v2026.09 · v1.17.2 — 2026-09-01 (fix)
 
 `disk-sweep.sh` would have queued research evidence for deletion. Found by a researcher
