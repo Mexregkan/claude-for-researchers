@@ -119,10 +119,16 @@ core starter/.claude/hooks/promise-checker.sh .claude/hooks/promise-checker.sh
 core starter/.claude/agents/git-committer.md  .claude/agents/git-committer.md
 core starter/.claude/agents/claim-auditor.md  .claude/agents/claim-auditor.md
 core starter/.claude/agents/round-planner.md  .claude/agents/round-planner.md
+mkdir -p scripts
+core starter/scripts/disk-sweep.sh           scripts/disk-sweep.sh
+chmod +x scripts/disk-sweep.sh 2>/dev/null
 chmod +x .claude/hooks/*.sh 2>/dev/null
 say "  -> BUGS.md is the recurring-mistake registry: one symptom -> cause -> guard entry"
 say "     per class of mistake, read before writing any code. It ships with generic"
 say "     starting entries; replace them with your own as the project bites you."
+say "  -> disk-sweep reclaims disk from regenerable files ONLY: it asks git what is"
+say "     disposable, so a TRACKED file can never be selected. Dry run by default."
+say "     FILL IN its PROJECTS array with your repo paths (nested repos listed separately)."
 say "  -> claim-auditor + round-planner are read-only sub-agents (no Bash, so they cannot"
 say "     write). Spawn claim-auditor with artifacts and the drafted claim but NOT your"
 say "     reasoning; round-planner tells you whether a thread is looping."
@@ -175,7 +181,19 @@ case $NUMERICS in mathematica|both)
     skill wolfram-headless scripts/greek2esc.py hooks/wolfram-license-notice.sh
     skill wolfbook                                  # MCP playbook (harmless if you don't use the Wolfbook MCP)
     mkdir -p .vscode
-    core starter/.vscode/settings.json .vscode/settings.json ;;  # notebook word wrap
+    core starter/.vscode/settings.json .vscode/settings.json    # notebook word wrap
+    # A finished headless run can hold a core indefinitely. The reaper kills a job ONLY
+    # when its log already has the script's own completion marker — never on elapsed time.
+    mkdir -p scripts
+    core starter/scripts/wolfram-reap.sh          scripts/wolfram-reap.sh
+    core starter/.claude/hooks/reap-wolfram.sh    .claude/hooks/reap-wolfram.sh
+    chmod +x scripts/wolfram-reap.sh .claude/hooks/reap-wolfram.sh 2>/dev/null
+    say "  -> wolfram-reap kills headless runs that FINISHED but never exited (one measured"
+    say "     case burned 40.7 CPU-hours after its work was over). Its Stop hook is ALREADY"
+    say "     registered in .claude/settings.json. It never kills on elapsed time — only when"
+    say "     the log holds the script's own completion marker, so live runs are untouchable."
+    say "     Also add a ~30-min scheduled run (README: Long runs leave things behind), and"
+    say "     end your .wls scripts with Quit[] after the done-line — that is the real fix." ;;
 esac
 [ "$OVERLEAF" -eq 1 ] && skill overleaf-sync
 

@@ -144,6 +144,21 @@ not an error) · ✅ has a mechanical guard.
   instead of numeric, unpacked instead of packed) is usually a *correctness* bug wearing a
   performance costume.
 - ⚠ **Diagnostics belong at cheap precision; reserve expensive precision for the answer.**
+- 🔴⚠ **A finished run that never exits.** Symptom: the log is perfect — results written,
+  counters printed, done-line present — and the process then holds a core at 100%
+  indefinitely. One measured instance burned **40.7 CPU-hours after the mathematics was
+  over**, found only because the laptop was hot. Two silent consequences: a runner that
+  blocks on the engine never reaches its own gate block, so **the runner's verdict is never
+  printed** and you read the raw log instead and assume the runner agreed; and the process
+  is reparented to init, so it outlives the terminal, the session and the agent, invisible
+  to any per-session check. **Guard: end every script with an explicit quit/exit after the
+  done-line, and check the runner's gate block actually printed — a done-line in the log is
+  not evidence that the runner returned. As a safety net, run a reaper that kills a job ONLY
+  when its log already contains the script's own completion marker.**
+- ⚠ **Never kill a long job on elapsed time or CPU load.** Legitimate research runs are
+  silent for hours; a staleness rule eventually kills live work, which is worse than a
+  wasted core. **Guard: the script's own completion marker is the only admissible evidence
+  that the work is over.** A job with no marker is untouchable however long it has run.
 
 ## F. LaTeX and documents
 
@@ -165,6 +180,19 @@ not an error) · ✅ has a mechanical guard.
 - ⚠ **The always-loaded status section re-grows.** It is appended to instead of replaced, and
   every line costs tokens in every future session. Before deleting anything from it, verify
   the content survives elsewhere (grep each distinctive constant against `CHANGELOG.md`).
+- 🔴 **Deleting generated files by extension, size or age eventually deletes a result.** In a
+  symbolic project the 2 GB file you must keep and the 2 GB file you must not look identical
+  from the outside — same extension, same size, same directory. **Guard: never let a cleanup
+  rule decide what is precious. Ask git: only files matching
+  `git ls-files --others --ignored --exclude-standard` are candidates, so a tracked file
+  cannot be selected at all.** The corollary is that **`.gitignore` is your delete list** —
+  if a heavy generated file is precious, commit it or un-ignore it, and one file then drives
+  both git and the cleanup.
+- ⚠ **Identical file size is a hint, not evidence of a duplicate.** Report candidates,
+  confirm with `cmp`, and delete by hand. A dedupe pass that acts on size alone is a
+  data-loss bug waiting for its first collision.
+- ⚠ **A cleanup tool that logs its own runs becomes a disk-growth source.** Rotate or
+  truncate its log on every run.
 
 ## H. Strategy selection and escalation
 

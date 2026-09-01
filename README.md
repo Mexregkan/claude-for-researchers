@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.09 · v1.16.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.09 · v1.17.0** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -2572,6 +2572,111 @@ Watch it from your editor or terminal: `tail -f numerics/run.log`. This lets
 you monitor progress without blocking your editor and gives Claude a way to see
 what a long computation is doing.
 
+### Long runs leave things behind
+
+Two failure modes that only show up on projects big enough to run overnight jobs. Neither
+announces itself, both cost you real money in electricity and disk, and one of them can
+silently invalidate how you read a result.
+
+#### A finished run that never exits
+
+A headless engine job writes its results, prints its counters and its done-line — and then
+keeps running at 100% of a core, indefinitely. Nothing in the log looks wrong, because
+nothing *is* wrong: the mathematics finished and was correct. The process simply never came
+down. One measured instance burned **40.7 CPU-hours after its work was over**, and was
+noticed only because the laptop was hot.
+
+The wasted core is the least of it. Two consequences are silent and worse:
+
+- **The runner's verdict is never printed.** If a `run_job.sh` wrapper blocks on the engine
+  and then checks gates afterwards, it never reaches the check. You read the raw log
+  instead, see the done-line, and assume the runner agreed with you. It never spoke.
+- **The process outlives everything.** It gets reparented to `init`/launchd, so it survives
+  the terminal, the session, and the agent that started it. Any per-session process check
+  shows nothing.
+
+The fix is upstream and takes one line: **end every script with an explicit quit after the
+done-line** (`Quit[]` in Wolfram, `sys.exit()` in Python), and check that the runner's gate
+block actually printed. A done-line in a log is not evidence that the runner returned.
+
+The safety net is [`wolfram-reap.sh`](starter/scripts/wolfram-reap.sh), and its whole design
+rests on one rule:
+
+> **Never reap on elapsed time or CPU load. The script's own completion marker is the only
+> admissible evidence that the work is over.**
+
+That constraint is not caution, it is what makes an automatic killer usable at all.
+Legitimate research runs are silent for hours — a staleness rule would eventually kill live
+work, which is far worse than a wasted core. So a job is killed only when its log already
+contains the marker the script prints *after* all its work. A job still computing has no
+marker and is untouchable, however long it has run. The failure mode is safe in the right
+direction: if your scripts print no marker, the reaper does nothing at all.
+
+Note where that marker comes from. [`BUGS.md`](#bugsmd-the-recurring-mistake-registry)
+already tells you to gate a run on "the log ends with the script's own done-line" — the same
+line, used as a *pass* criterion. The reaper just reads it as proof the work is over. If you
+have that discipline already, you have everything the reaper needs.
+
+Wire it up two ways, because neither alone is enough:
+
+- a **Stop hook** ([`reap-wolfram.sh`](starter/.claude/hooks/reap-wolfram.sh)), which fires
+  when the agent finishes a turn. Safe to run every turn, precisely because of the rule
+  above — including turns where you deliberately left a job running.
+- a **scheduled job** every ~30 minutes, which catches runs left going after you close the
+  session. On macOS a launchd plist in `~/Library/LaunchAgents/`:
+
+  ```xml
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/YOU/.local/bin/wolfram-reap</string>
+    <string>--apply</string><string>--quiet</string>
+  </array>
+  <key>StartInterval</key><integer>1800</integer>
+  ```
+
+  On Linux, `*/30 * * * * $HOME/.local/bin/wolfram-reap --apply --quiet` in `crontab -e`.
+
+`--quiet` prints only when something was actually reaped: killing a process must never be
+silent, but a scan that finds nothing must never be noise. If two agents work in the repo,
+point both configs at the same hook script — both leave orphans, and one file is one place
+to fix a bug.
+
+#### Generated files fill the disk, and the precious ones look identical
+
+Symbolic computation produces enormous intermediates, and the file you must keep is
+indistinguishable from the one you must not: same extension, same size, same directory. A
+2 GB proof object sits next to a 2 GB scratch dump. Any cleanup rule based on extension,
+size or age will, eventually, delete a result.
+
+So [`disk-sweep.sh`](starter/scripts/disk-sweep.sh) does not decide what is precious. **It
+asks git.** The only files it will ever consider are the ones git already calls disposable:
+
+```bash
+git ls-files --others --ignored --exclude-standard   # untracked AND ignored
+```
+
+A tracked file cannot appear in that list, so anything you committed is safe *structurally* —
+not because someone remembered to write an exception for it. The corollary is the habit
+worth forming:
+
+> **`.gitignore` is your delete list.** If a heavy generated file is precious, commit it or
+> un-ignore it. If it is disposable, make sure it is ignored. One file then drives both git
+> and the cleanup, and the two cannot disagree.
+
+The rest of the safety contract is short: **dry run by default** (nothing goes without
+`--apply`), and **research data is reported, never deleted** — the `dupes` section prints
+same-size candidates over 1 GB and tells you to confirm with `cmp` before touching anything,
+because identical size is a hint and never evidence.
+
+Sections cover gitignored LaTeX aux files, old run logs, gitignored engine scratch
+(`.mx`/`.wdx`/`.npy`/`.npz`), and — on macOS — Mathematica doc paclets for versions you no
+longer have installed, which are the quiet gigabytes most people never look for. Fill in the
+`PROJECTS` array at the top with your repos, listing nested repos separately: a nested repo
+is invisible to its parent's `git ls-files`, so an unlisted one is simply never swept.
+
+If you schedule it weekly, rotate its log. A cleanup tool that appends to a logfile forever
+becomes a disk-growth source of its own, which is a funny way to lose an afternoon.
+
 ### Mark AI-generated outputs separately
 
 In data-science projects, a common convention is a dedicated `data/generated/`
@@ -3344,7 +3449,9 @@ starter/
 ├── .vscode/
 │   └── settings.json               ← word wrap for notebook cells only (not your .tex/.py files)
 ├── scripts/
-│   └── git-push-both.sh             ← (opt-in) dual-remote push; enable via the PostToolUse hook
+│   ├── git-push-both.sh             ← (opt-in) dual-remote push; enable via the PostToolUse hook
+│   ├── wolfram-reap.sh              ← (Mathematica) kills batch runs that finished but never exited; marker-based, never time-based
+│   └── disk-sweep.sh                ← reclaims disk from regenerable files ONLY — asks git what is disposable; dry run by default
 ├── Pipeline/                        ← (pipeline workflow — optional) one map per big code; read README.md first
 │   └── README.md                   ← index of the codes and their pipeline docs
 ├── handoff/                         ← (two agents — optional) the agent mailbox; skip if only one agent works the repo
@@ -3358,6 +3465,7 @@ starter/
     ├── hooks/
     │   ├── pre-compact.sh           ← auto-save before context compression
     │   ├── promise-checker.sh       ← Stop hook: catches "I'll remember" without a write
+    │   ├── reap-wolfram.sh          ← (Mathematica) Stop hook: reaps finished-but-alive batch runs; loud if the tool is missing
     │   ├── pipeline-guard.sh        ← (pipeline workflow — optional) PostToolUse nudge; self-quiets until a Pipeline/ doc exists
     │   └── pipeline-coverage.sh     ← (pipeline workflow — optional) on-demand coverage check
     ├── agents/
@@ -3428,6 +3536,9 @@ in Part I.
 | [`starter/.claude/hooks/pipeline-coverage.sh`](starter/.claude/hooks/pipeline-coverage.sh) | On-demand check (pipeline workflow): flags any main code without a pipeline doc and any orphan doc; quiet ("no pipeline docs yet") until you adopt the workflow |
 | [`starter/Pipeline/README.md`](starter/Pipeline/README.md) | Index stub for the `Pipeline/` folder: the codes-and-docs table plus the house rules every pipeline file follows — the file Claude reads before opening any large code |
 | [`starter/.claude/hooks/promise-checker.sh`](starter/.claude/hooks/promise-checker.sh) | Stop hook: catches "I'll remember / I've saved" without a corresponding file write |
+| [`starter/scripts/wolfram-reap.sh`](starter/scripts/wolfram-reap.sh) | (Mathematica) Kills headless `wolframscript -file` jobs that **finished but never exited** — a measured instance burned 40.7 CPU-hours after its work was over, and blocked its runner so the runner's gate verdict never printed. Kills a job ONLY when its log already holds the script's own completion marker; **elapsed time and CPU load are never used as evidence**, so a job still computing is untouchable however long it has run. Dry run by default; `--quiet` for hooks |
+| [`starter/.claude/hooks/reap-wolfram.sh`](starter/.claude/hooks/reap-wolfram.sh) | (Mathematica) Stop hook that runs the reaper when an agent finishes a turn — safe every turn, because a still-computing job has no marker. Point a second agent's config at this same file. Says so loudly if the tool is missing rather than silently doing nothing |
+| [`starter/scripts/disk-sweep.sh`](starter/scripts/disk-sweep.sh) | Reclaims disk from regenerable caches and run artifacts. The safety contract is the point: **dry run by default**, and inside a repo it only ever considers files git itself calls disposable (`git ls-files --others --ignored --exclude-standard`) — a tracked file cannot be selected, so committed results are safe *structurally*. Research data is reported, never deleted. Corollary: `.gitignore` is your delete list |
 | [`docs/condensed-notes-guide.md`](docs/condensed-notes-guide.md) | Detailed guide on what to include in and exclude from brief.tex |
 | [`scripts/git-push-both.sh`](scripts/git-push-both.sh) | Dual-remote push: push to GitHub (personal) and GitLab (institution) with separate identities |
 | [`scripts/readme-latex-check.sh`](scripts/readme-latex-check.sh) | Scan a README for LaTeX commands that GitHub's MathJax does not support |

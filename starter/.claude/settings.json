@@ -68,6 +68,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "_comment": "Mathematica projects only. Kills headless wolframscript jobs that FINISHED but never exited (one measured case burned 40.7 CPU-hours after its work was over, and blocked its runner so the runner's gate verdict never printed). Safe to fire every turn: it kills a job ONLY when the log already holds the script's own completion marker, so a run still computing is untouchable however long it has taken. The bootstrap installs the hook only for Mathematica projects; with no such file this line is a harmless no-op, so it is safe to leave in place. If a second agent works here, point its config at the SAME script.",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/reap-wolfram.sh 2>/dev/null || true",
+            "timeout": 30
+          }
+        ]
       }
     ]
   }

@@ -13,6 +13,60 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.09 · v1.17.0 — 2026-09-01
+
+Two things long runs leave behind. Both cost real money, neither announces itself, and one
+of them silently changes how you should read a result.
+
+### Added
+- **New guide section, [Long runs leave things behind](README.md#long-runs-leave-things-behind)**,
+  under *Numerics and computation*.
+- **[`wolfram-reap.sh`](starter/scripts/wolfram-reap.sh)** — kills headless
+  `wolframscript -file` jobs that **finished but never exited**. A measured instance held a
+  core at 100% for 2 days after writing its results: 40.7 CPU-hours after the mathematics
+  was over, noticed only because the laptop was hot. The wasted core is the least of it —
+  a runner blocking on the engine never reaches its own gate block, so **the runner's
+  verdict is never printed** and you read the raw log and assume the runner agreed; and the
+  process is reparented to init, so it outlives the terminal, the session and the agent.
+- The design rule is the transferable part: **elapsed time and CPU load are never used as
+  evidence.** A job is killed only when its log already contains the marker the script
+  prints after all its work. Research runs are legitimately silent for hours, so a staleness
+  rule would eventually kill live work — worse than a wasted core. The failure mode is safe
+  in the right direction: no marker in your scripts means the reaper does nothing at all.
+  Note this reuses a discipline the guide already teaches — `BUGS.md` §E gates a run on "the
+  log ends with the script's own done-line"; the reaper just reads that same line as proof
+  the work is over.
+- **[`reap-wolfram.sh`](starter/.claude/hooks/reap-wolfram.sh)**, a Stop hook, now
+  pre-registered in [`starter/.claude/settings.json`](starter/.claude/settings.json) (a
+  harmless no-op in projects without the script). Safe to fire every turn, precisely because
+  a still-computing job has no marker. Pair it with a ~30-minute scheduled job for runs left
+  going after you close the session — the guide gives a launchd plist and a cron line.
+- **[`disk-sweep.sh`](starter/scripts/disk-sweep.sh)** — reclaims disk from regenerable
+  files. Symbolic computation makes the precious file and the disposable one look identical:
+  a 2 GB proof object sits next to a 2 GB scratch dump, same extension, same directory. So
+  the script does not decide what is precious — **it asks git.** Its only candidates are
+  files matching `git ls-files --others --ignored --exclude-standard`, so a tracked file
+  cannot be selected and committed results are safe *structurally*, not by a remembered
+  exception. Dry run by default; research data is reported (`dupes`), never deleted.
+- The habit that falls out of it, and the reason it is in the guide: **`.gitignore` is your
+  delete list.** If a heavy generated file is precious, commit it or un-ignore it. One file
+  then drives both git and the cleanup, and the two cannot disagree.
+- Two new `BUGS.md` entries in §E (a finished run that never exits; never kill on elapsed
+  time) and three in §G (never delete generated files by extension/size/age; identical size
+  is a hint not evidence; a cleanup tool that logs forever becomes a disk-growth source).
+- `scripts/bootstrap.sh` installs `disk-sweep.sh` for every project and the reaper + its hook
+  only for Mathematica projects.
+
+### Action needed
+- Optional. Mathematica projects: copy `starter/scripts/wolfram-reap.sh` and
+  `starter/.claude/hooks/reap-wolfram.sh`, and add the `Stop` hook block from
+  [`starter/.claude/settings.json`](starter/.claude/settings.json). If your scripts print a
+  gate counter or summary line after all their work, set `WOLFRAM_REAP_DONE_RE` to match it —
+  a marker printed only after every check has run is stronger evidence than a done-line.
+- Optional. Any project: copy `starter/scripts/disk-sweep.sh` and fill in its `PROJECTS`
+  array, listing nested repos separately — a nested repo is invisible to its parent's
+  `git ls-files`, so an unlisted one is simply never swept.
+
 ## v2026.09 · v1.16.0 — 2026-09-01
 
 Two disciplines that sit either side of a calculation: choosing which case to test, and
