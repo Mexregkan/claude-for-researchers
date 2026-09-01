@@ -52,9 +52,23 @@ choosing what to call the result. Neither produces an error message, and both ar
   "necessary"/"sufficient"/"unique"/"canonical", conditional theorems, and dependency cycles.
 - Two new sections in [`starter/BUGS.md`](starter/BUGS.md): **H** (strategy selection and
   escalation) and **I** (claim generation — naming more than you computed).
-- Both skills install as **universal core** in `scripts/bootstrap.sh`. They are not gated on
-  the project having code: the `CLAUDE.md` blocks reference them by name, so a conditional
-  install would leave a dangling `/command` — and every project makes claims.
+- **Two read-only sub-agents**, [`claim-auditor`](starter/.claude/agents/claim-auditor.md)
+  and [`round-planner`](starter/.claude/agents/round-planner.md). The first is the fresh-context
+  hostile reader: give it the artifacts and the drafted claim, and deliberately **not** your
+  reasoning or what you hope is true — those are what the audit exists to test around, and a
+  fresh context handed the narrative will reconstruct your conclusion and agree with you. The
+  second answers "is this thread still moving?", classifying a round ADVANCE / USEFUL NEGATIVE
+  / LOOP / UNRESOLVED and naming which loop signal fired. Its mechanical test: compare the
+  tuple (target · simplest case in play · exact residual · the step being established) against
+  the previous round — unchanged means loop, however different the new code looks.
+- Both agents are declared `tools: Read, Grep, Glob` — **no `Bash`**. A sub-agent holding
+  `Bash` can write through the shell whatever its prompt says, so "read-only" is otherwise a
+  promise rather than a property. It costs an auditor nothing, since one that cannot launch a
+  job is behaving correctly anyway. Worth copying into your own agents; the guide now says so.
+- Both skills and both agents install as **universal core** in `scripts/bootstrap.sh`. The
+  skills are not gated on the project having code: the `CLAUDE.md` blocks reference them by
+  name, so a conditional install would leave a dangling `/command` — and every project makes
+  claims.
 
 ### Changed
 - **The epistemic-status vocabulary is now one vocabulary with documented coarsenings.** The
@@ -72,6 +86,9 @@ choosing what to call the result. Neither produces an error message, and both ar
   your own. If you want `gate_audit.sh` to be able to read your scripts, wrap your checks as
   `gate("short neutral label", <expression>)` — that is the change that makes labels auditable
   at all, and it is worth doing even if you never run the script.
+- Optional. Existing projects: copy `starter/.claude/agents/claim-auditor.md` and
+  `starter/.claude/agents/round-planner.md` into `.claude/agents/`. Nothing else changes if
+  you don't — an unspawned sub-agent costs nothing.
 
 ## v2026.08 · v1.15.0 — 2026-08-25 (update)
 
