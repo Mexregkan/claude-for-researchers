@@ -13,6 +13,45 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.09 · v1.17.2 — 2026-09-01 (fix)
+
+`disk-sweep.sh` would have queued research evidence for deletion. Found by a researcher
+running v1.17.0 on a real project, which is the only place this could have shown up.
+
+### Fixed
+- **The keep-list, `SWEEP_KEEP_RE`.** v1.17.0 said the tool "asks git what is disposable".
+  The code was right and the sentence was not: git was asked what is *untracked and ignored*,
+  which is a **necessary** condition for disposable, never a sufficient one. On a real project
+  the ignored set is not clean — a `generated/` tree is ignored *wholesale* because most of it
+  is scratch, and then some of it becomes the evidence behind a published claim while keeping
+  the same extension as the scratch beside it. Three collisions on one first dry run, all
+  gitignored: `*.out` (hyperref bookmarks in the LaTeX glob — also the engine result logs
+  behind a published section), `*.log` (run noise — also the file carrying a cited rank line),
+  `*.mx` (engine scratch — also the frozen regression base states). The script now takes an
+  extended regex of ignored-but-precious repo-relative paths, defaulting to the `generated/`
+  convention this toolkit already teaches, and **counts and reports what it held back**
+  (`protected: 3 gitignored file(s)`). `DISK_SWEEP_KEEP_RE=''` disables it deliberately.
+- **The `dupes` scan no longer defaults to `$HOME`**, where the report fills with caches,
+  films and audiobooks and that noise buries the findings that matter. It scans your
+  `PROJECTS`; `DISK_SWEEP_DUPES_ROOT` widens it. (A deliberate wider pass did turn up a
+  genuine 25 GB duplicated data file across two working directories.)
+- **The documented escape hatch was inert.** `SWEEP_KEEP_RE="${DISK_SWEEP_KEEP_RE:-...}"`
+  uses `:-`, which substitutes the default for an *empty* value as well as an unset one — so
+  `DISK_SWEEP_KEEP_RE=''` silently kept the default. Now `-`, and tested: the default
+  protects 3 of 6 fixture files and the empty override sweeps all 6.
+- New `BUGS.md` §G entry for the class.
+
+### The reason it is worth reading the section again
+The guide now says what happened, because it is its own medicine: the first version's label
+("asks git what is disposable") claimed more than the code checked. That is exactly the
+failure the `claim-audit` skill exists to catch — **a noun in the claim that is absent from
+what was computed** — and it went out in a released tool anyway.
+
+### Action needed
+- **Recommended, not optional, if you copied `disk-sweep.sh` from v1.17.0.** Re-copy
+  [`starter/scripts/disk-sweep.sh`](starter/scripts/disk-sweep.sh) and set `SWEEP_KEEP_RE`
+  for your project. Then run it once as a dry run and read every line before `--apply`.
+
 ## v2026.09 · v1.17.1 — 2026-09-01 (fix)
 
 A bug found in `gate_audit.sh` by a research project that had independently hit it, plus the

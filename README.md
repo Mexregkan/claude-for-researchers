@@ -15,7 +15,7 @@ workflow so that *you* can do the research faster and more cleanly: less time on
 housekeeping, better continuity across sessions, fewer mistakes from working in a big
 messy codebase. Claude is the tool; you are the researcher.
 
-**Version 2026.09 · v1.17.1** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
+**Version 2026.09 · v1.17.2** — see [CHANGELOG.md](CHANGELOG.md) for recent updates. If you
 set up a project from an earlier copy, the changelog tells you what is worth
 re-copying from `starter/`. (The calendar tag says how current your copy is; the SemVer
 says how much has changed and whether anything breaks — see the changelog intro.)
@@ -2669,12 +2669,43 @@ git ls-files --others --ignored --exclude-standard   # untracked AND ignored
 ```
 
 A tracked file cannot appear in that list, so anything you committed is safe *structurally* —
-not because someone remembered to write an exception for it. The corollary is the habit
-worth forming:
+not because someone remembered to write an exception for it.
 
-> **`.gitignore` is your delete list.** If a heavy generated file is precious, commit it or
-> un-ignore it. If it is disposable, make sure it is ignored. One file then drives both git
-> and the cleanup, and the two cannot disagree.
+**But being ignored is a *necessary* condition for disposable, not a sufficient one — and
+that gap will bite you.** Asking git guarantees the tool never touches a committed result.
+It guarantees nothing at all about the ignored ones, and on a real project the ignored set is
+not clean. A `generated/` tree gets ignored *wholesale*, because most of what lands there is
+scratch. Then some of it becomes the evidence behind a published claim — and it keeps the
+same extension as the scratch beside it.
+
+Three collisions from one project's first dry run, every one gitignored and therefore called
+disposable by git:
+
+| glob | what it means there | what it also matched |
+|---|---|---|
+| `*.out` | hyperref bookmark files | Wolfram result logs behind a published section |
+| `*.log` | run noise | the file carrying the rank line a published claim cites |
+| `*.mx` | engine scratch | the frozen base states used as regression gates |
+
+Same extension as the scratch beside them, opposite value. No rule about file *shape* can
+separate those, which is why the answer is a list rather than a cleverer glob. The script
+takes `SWEEP_KEEP_RE`, an extended regex of repo-relative paths that are ignored but not
+disposable; it counts what it held back and says so (`protected: 3 gitignored file(s)`). The
+default protects the `generated/` convention this toolkit already teaches, and
+`DISK_SWEEP_KEEP_RE=''` sweeps everything git calls disposable if you really mean it.
+
+So the corollary is narrower than it first looks. `.gitignore` decides what is a *candidate*;
+the keep-list decides what survives being one. If a precious generated file is small, commit
+it and the question disappears. If committing it is impractical, name it in the keep-list.
+
+> **Worth noticing what just happened here, because it is this guide's own medicine.** The
+> first version of this section said the tool "asks git what is disposable". The code was
+> right; the sentence claimed more than the code checked — git was asked what is *untracked
+> and ignored*, and the label quietly promoted that to *disposable*. That is precisely the
+> failure the [claim-audit](#claim-discipline-name-only-what-you-computed) skill exists to
+> catch: **a noun in the claim that is absent from what was computed.** It was caught by a
+> researcher running the tool on a real project, which is the only place a gap like this
+> shows up.
 
 The rest of the safety contract is short: **dry run by default** (nothing goes without
 `--apply`), and **research data is reported, never deleted** — the `dupes` section prints
@@ -2686,6 +2717,12 @@ Sections cover gitignored LaTeX aux files, old run logs, gitignored engine scrat
 longer have installed, which are the quiet gigabytes most people never look for. Fill in the
 `PROJECTS` array at the top with your repos, listing nested repos separately: a nested repo
 is invisible to its parent's `git ls-files`, so an unlisted one is simply never swept.
+
+The `dupes` report scans your `PROJECTS` by default rather than your whole home directory —
+pointed at `$HOME` it fills with caches, films and audiobooks, and that noise buries the
+findings that matter. (Widen it deliberately with `DISK_SWEEP_DUPES_ROOT` when you want a
+broader pass. One such pass did turn up a genuine 25 GB duplicated data file sitting in two
+working directories.)
 
 If you schedule it weekly, rotate its log. A cleanup tool that appends to a logfile forever
 becomes a disk-growth source of its own, which is a funny way to lose an afternoon.
@@ -3551,7 +3588,7 @@ in Part I.
 | [`starter/.claude/hooks/promise-checker.sh`](starter/.claude/hooks/promise-checker.sh) | Stop hook: catches "I'll remember / I've saved" without a corresponding file write |
 | [`starter/scripts/wolfram-reap.sh`](starter/scripts/wolfram-reap.sh) | (Mathematica) Kills headless `wolframscript -file` jobs that **finished but never exited** — a measured instance burned 40.7 CPU-hours after its work was over, and blocked its runner so the runner's gate verdict never printed. Kills a job ONLY when its log already holds the script's own completion marker; **elapsed time and CPU load are never used as evidence**, so a job still computing is untouchable however long it has run. Dry run by default; `--quiet` for hooks |
 | [`starter/.claude/hooks/reap-wolfram.sh`](starter/.claude/hooks/reap-wolfram.sh) | (Mathematica) Stop hook that runs the reaper when an agent finishes a turn — safe every turn, because a still-computing job has no marker. Point a second agent's config at this same file. Says so loudly if the tool is missing rather than silently doing nothing |
-| [`starter/scripts/disk-sweep.sh`](starter/scripts/disk-sweep.sh) | Reclaims disk from regenerable caches and run artifacts. The safety contract is the point: **dry run by default**, and inside a repo it only ever considers files git itself calls disposable (`git ls-files --others --ignored --exclude-standard`) — a tracked file cannot be selected, so committed results are safe *structurally*. Research data is reported, never deleted. Corollary: `.gitignore` is your delete list |
+| [`starter/scripts/disk-sweep.sh`](starter/scripts/disk-sweep.sh) | Reclaims disk from regenerable caches and run artifacts. The safety contract is the point: **dry run by default**, and inside a repo it only ever considers files git itself calls disposable (`git ls-files --others --ignored --exclude-standard`) — a tracked file cannot be selected, so committed results are safe *structurally*. Research data is reported, never deleted. Being ignored is a NECESSARY condition for disposable, not a sufficient one, so it also takes a `SWEEP_KEEP_RE` keep-list for ignored-but-precious paths (a `generated/` tree is ignored wholesale, and some of it is the evidence behind a published claim, with the same extension as the scratch beside it) — it counts and reports what it held back |
 | [`docs/condensed-notes-guide.md`](docs/condensed-notes-guide.md) | Detailed guide on what to include in and exclude from brief.tex |
 | [`scripts/git-push-both.sh`](scripts/git-push-both.sh) | Dual-remote push: push to GitHub (personal) and GitLab (institution) with separate identities |
 | [`scripts/readme-latex-check.sh`](scripts/readme-latex-check.sh) | Scan a README for LaTeX commands that GitHub's MathJax does not support |

@@ -191,6 +191,17 @@ not an error) · ✅ has a mechanical guard.
 - ⚠ **Identical file size is a hint, not evidence of a duplicate.** Report candidates,
   confirm with `cmp`, and delete by hand. A dedupe pass that acts on size alone is a
   data-loss bug waiting for its first collision.
+- 🔴⚠ **"Gitignored" is a necessary condition for disposable, never a sufficient one.**
+  Symptom: a cleanup that correctly refuses to touch tracked files still queues up your
+  evidence, because a `generated/` tree is ignored WHOLESALE (most of it is scratch) and some
+  of it is the record behind a published claim — with the same extension as the scratch beside
+  it. Real collisions, all gitignored: `*.out` meaning hyperref bookmarks *and* engine result
+  logs; `*.log` meaning noise *and* the file carrying a cited rank line; `*.mx` meaning scratch
+  *and* frozen regression base states. Cause: reading "git calls this ignorable" as "this is
+  worthless". **Guard: keep an explicit keep-list of ignored-but-precious paths, have the tool
+  COUNT and REPORT what it held back, and run the first sweep of any project as a dry run and
+  read every line.** If a precious generated file is small, commit it and the question
+  disappears.
 - ⚠ **A cleanup tool that logs its own runs becomes a disk-growth source.** Rotate or
   truncate its log on every run.
 

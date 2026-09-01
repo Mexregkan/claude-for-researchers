@@ -15,13 +15,15 @@
 #      (untracked AND ignored). A TRACKED FILE CAN NEVER BE SELECTED, so anything you
 #      committed is structurally safe — not safe by a rule someone remembered to write,
 #      safe because it cannot reach the candidate list.
-#   3. Research data is REPORTED, never deleted. See the `dupes` section, which only ever
+#   3. But being ignored is a NECESSARY condition for disposable, NOT A SUFFICIENT ONE.
+#      See SWEEP_KEEP_RE below — this is the part that will bite you.
+#   4. Research data is REPORTED, never deleted. See the `dupes` section, which only ever
 #      prints and tells you how to confirm before you act yourself.
 #
-#   The corollary is the thing to internalise: **`.gitignore` is your delete list.** If a
-#   heavy generated file is precious, commit it or un-ignore it. If it is disposable, make
-#   sure it IS ignored. That one file then drives both git and this script, and the two can
-#   never disagree.
+#   So the corollary is narrower than it first looks: `.gitignore` decides what is a
+#   CANDIDATE, and the keep-list decides what survives being one. If a heavy generated file
+#   is precious and small, commit it and the question disappears. If committing it is
+#   impractical, name it in SWEEP_KEEP_RE.
 #
 # ── SETUP: point it at your projects ─────────────────────────────────────────────────
 #
@@ -50,8 +52,40 @@ PROJECTS=(
 if [ -n "${DISK_SWEEP_PROJECTS:-}" ]; then
   IFS=':' read -ra PROJECTS <<< "$DISK_SWEEP_PROJECTS"
 fi
-# Where the `dupes` report looks for big files.
-DUPES_ROOT="${DISK_SWEEP_DUPES_ROOT:-$HOME}"
+# ── THE KEEP-LIST: gitignored, but NOT disposable ────────────────────────────────────
+#
+# An extended regex matched against the repo-relative path. Anything matching is counted and
+# skipped, however well it matches a scratch glob.
+#
+# WHY THIS EXISTS, and why it is not an edge case. A `generated/` tree gets ignored
+# WHOLESALE, because most of what lands in it is scratch. Then some of it becomes the
+# evidence behind a published claim — and it keeps the same extension as the scratch beside
+# it. Three real collisions, all found on one project's first dry run, all gitignored and so
+# all called disposable by git:
+#
+#   *.out  in the latex-aux glob this means hyperref bookmark files. In the same tree it was
+#          also the extension of the Wolfram result logs behind a published section.
+#   *.log  in the run-logs glob this means noise. One such file carried the rank line that
+#          was the consistency evidence a published claim cites.
+#   *.mx   in the engine-scratch glob this means scratch. Some were the FROZEN base states
+#          used as regression gates.
+#
+# Same extension as the scratch beside them, opposite value. No rule about file shape can
+# tell those apart, which is exactly why this list is a list and not a cleverer glob.
+#
+# The default protects the `generated/` convention this toolkit teaches (research outputs go
+# in `numerics/generated/` and `figures/generated/`). Widen it for your project. Set
+# DISK_SWEEP_KEEP_RE='' to sweep everything git calls disposable — deliberately.
+# NOTE the `-` and not `:-` : with `:-` an explicitly EMPTY DISK_SWEEP_KEEP_RE would fall
+# back to the default, silently making the documented escape hatch inert.
+SWEEP_KEEP_RE="${DISK_SWEEP_KEEP_RE-(^|/)generated/}"
+KEPT=0
+
+# Where the `dupes` report looks for big files. Defaults to your PROJECTS, NOT to $HOME:
+# at $HOME the report is dominated by personal media — caches, films, audiobooks — which a
+# project tool has no business listing, and that noise buries the hits that matter. Widen it
+# deliberately (DISK_SWEEP_DUPES_ROOT="$HOME/Research") when you want a broader pass.
+DUPES_ROOT="${DISK_SWEEP_DUPES_ROOT:-}"
 
 APPLY=0
 DAYS=14
@@ -73,6 +107,9 @@ Sections:
   wolfram-temp      stale .paclet downloads in Paclets/Temporary            [macOS]
   wolfram-chatbook  Chatbook vector DBs                    [opt-in: only when named]
   dupes             REPORT ONLY: large duplicate-sized files (never deletes)
+
+Env: DISK_SWEEP_PROJECTS (colon-separated repos) · DISK_SWEEP_KEEP_RE (paths that are
+     gitignored but NOT disposable; '' to disable) · DISK_SWEEP_DUPES_ROOT (dupes scan root)
 EOF
 }
 
@@ -126,6 +163,9 @@ sweep_repo() {
   while IFS= read -r -d '' rel; do
     local f="$repo/$rel"
     [ -f "$f" ] || continue
+    if [ -n "$SWEEP_KEEP_RE" ] && printf '%s' "$rel" | grep -qE "$SWEEP_KEEP_RE"; then
+      KEPT=$((KEPT+1)); continue
+    fi
     if [ $# -gt 0 ] && ! find "$f" "$@" -print -quit 2>/dev/null | grep -q .; then
       continue
     fi
@@ -205,8 +245,11 @@ fi
 
 if want dupes; then
   section "dupes — REPORT ONLY (nothing here is ever deleted)"
-  echo "  scanning $DUPES_ROOT for files >1GB with an identical-size twin..."
-  find "$DUPES_ROOT" -type f -size +1G 2>/dev/null \
+  DUPES_DIRS=("${PROJECTS[@]}")
+  [ -n "$DUPES_ROOT" ] && DUPES_DIRS=("$DUPES_ROOT")
+  echo "  scanning for files >1GB with an identical-size twin in:"
+  printf '    %s\n' "${DUPES_DIRS[@]}"
+  find "${DUPES_DIRS[@]}" -type f -size +1G 2>/dev/null \
     | while IFS= read -r f; do printf "%s\t%s\n" "$(wc -c < "$f" | tr -d ' ')" "$f"; done \
     | sort -rn | awk -F'\t' '
         { if ($1 == prev) { if (!shown[$1]++) print "\n  size " $1 ":\n    " prevf; print "    " $2 }
@@ -217,5 +260,10 @@ if want dupes; then
   echo "    cmp <a> <b> && echo IDENTICAL"
 fi
 
+if [ "$KEPT" -gt 0 ]; then
+  echo
+  echo "  protected: $KEPT gitignored file(s) matched SWEEP_KEEP_RE and were NOT swept"
+  echo "             (research output whose extension collides with a scratch glob)"
+fi
 printf "\nTotal: %s" "$(human "$TOTAL")"
 if [ "$APPLY" = 1 ]; then echo " reclaimed."; else echo " reclaimable — re-run with --apply to delete."; fi
