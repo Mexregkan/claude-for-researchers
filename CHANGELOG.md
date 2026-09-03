@@ -13,6 +13,70 @@ skill/tool/guide section, **MAJOR** only if an update would break an existing se
 a re-copy to keep working). So the SemVer answers the other question — "how much changed,
 and did anything break?" Nothing has forced a major bump yet, so we are still on `1.x`.
 
+## v2026.09 · v1.18.0 — 2026-09-03
+
+**Document audits.** `/claim-audit` guards the moment a computation becomes prose. Nothing
+guarded what happened next: the prose becoming the record that every later session, every
+collaborator and eventually the paper reads as true. A record is written in the same pass,
+from the same context, as the claim it records — so the first adversarial reader of your
+workbook is whoever you send it to. This release adds the workflow for doing that read
+yourself, first.
+
+### Added
+- **New section 10, [Auditing a document before you rely on it](README.md#auditing-a-document-before-you-rely-on-it)**
+  (Part II; the following sections renumber 10–24 → 11–25). The five moves — mechanical
+  pre-filter, sweep before you judge, an evidence class per claim, a second witness who does
+  not know the story, a rubric per document type — plus the two ideas that transfer even if
+  you never install anything: **sibling records are co-claims, not corroboration**, and the
+  five-minute version (do the pointers resolve, is every headline typed, does the strongest
+  sentence appear identically in the sibling records).
+- **`/doc-audit` skill** — [`starter/.claude/skills/doc-audit/`](starter/.claude/skills/doc-audit/):
+  `SKILL.md`, the mechanical pre-filter `doc_lint.sh`, per-type checklists in `rubrics.md`,
+  the `report-template.md`, and `selftest.sh` (39 cases). It evaluates **one** finished
+  document — workbook section, `bigPicture.tex`, `strategy-map.md`, `brief.tex`, a handoff
+  message, a paper draft — and **never edits it**: findings carry proposed replacement text
+  and you decide what to apply.
+- **`doc_lint.sh`** reports dangling `\ref`/`\cite` keys and dead links, strength words in
+  paragraphs carrying none of the eight claim statuses, hand-waving, count leads, **file
+  pointers that no longer resolve** (telling "moved" apart from "gone"), unfinished markers,
+  append-style retractions, relative dates, and a structural check per document type. Like
+  `gate_audit.sh`, it exits non-zero with a loud banner rather than reporting a clean run on
+  a file it could not parse.
+- **Two read-only sub-agents.** [`doc-sweeper`](starter/.claude/agents/doc-sweeper.md)
+  extracts one ledger row per checkable claim and deliberately returns **no verdicts** —
+  reading and judging in one pass gives confident verdicts on the easy claims and silence on
+  the load-bearing ones. [`doc-auditor`](starter/.claude/agents/doc-auditor.md) is the
+  fresh-context adversary for a single claim, handed the claim and the evidence but never the
+  caller's verdict.
+- **An [`audits/`](starter/audits/README.md) folder** with the convention: one dated report
+  per run, and the rule that nothing downstream may cite an audit as evidence — cite what it
+  *checked*.
+- **Five `BUGS.md` entries** in § F: pointers broken silently by a folder move, sibling
+  records as co-claims, deleting a section orphaning the claims that pointed into it, and an
+  audit report not being a record.
+
+### Changed
+- `starter/CLAUDE.md` — the *Research-claim discipline* block now carries the document half
+  ("audit the document before you rely on it"), `/doc-audit` is in the Skills list, and
+  `audits/` is in the Files map.
+- `scripts/bootstrap.sh` and the bootstrapping prompt in Part I install the kit as universal
+  core, with the one fill-in it needs.
+
+### Action needed (optional)
+- To use it in an existing project: copy `starter/.claude/skills/doc-audit/`,
+  `starter/.claude/agents/doc-sweeper.md`, `starter/.claude/agents/doc-auditor.md` and
+  `starter/audits/README.md`, then **fill in the `SEARCH_DIRS` line near the top of
+  `doc_lint.sh`** with the folders your documents cite scripts, logs and data from — without
+  it every pointer is reported as unresolved. Run `bash .claude/skills/doc-audit/selftest.sh`
+  once; it should print `39 passed, 0 failed`.
+
+### Fixed
+- **The bootstrapping prompt in Part I never installed the claim-discipline kit.** v1.16.0
+  wired `simple-case-gate`, `claim-audit`, `claim-auditor` and `round-planner` into
+  `scripts/bootstrap.sh` only, so a project set up through the pasted prompt got a
+  `CLAUDE.md` naming two slash commands that did not exist. The prompt now copies the kit
+  verbatim.
+
 ## v2026.09 · v1.17.3 — 2026-09-01 (fix)
 
 ### Fixed

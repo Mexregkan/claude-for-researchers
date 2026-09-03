@@ -166,6 +166,24 @@ not an error) · ✅ has a mechanical guard.
 - ⚠ **Never edit generated files** (`.aux`, `.log`, `.pdf`, `.bbl`).
 - ⚠ **Corrections REPLACE in place, never append.** Sessions read different parts of a long
   document; a stale statement with a distant correction will be found and believed.
+- ⚠ **A folder reorganisation breaks pointers silently.** Moving or renaming a script leaves
+  every document that names it reading perfectly and pointing at nothing. Nothing errors and
+  no compile fails. Guard: after any move, run `doc_lint.sh` on the affected documents and
+  read section `[5]` — it tells "moved" (the basename exists elsewhere) apart from "gone".
+- 🔴 **Sibling records are co-claims, not corroboration.** The workbook section, the strategy
+  map cell, the changelog row and the handoff message are one sentence written four times in
+  one pass, not four witnesses. Agreement between them is not evidence; **disagreement is a
+  finding**. Guard: never justify a statement with "the strategy map says so"; when two
+  records disagree, quote both and decide only if evidence decides.
+- ⚠ **Deleting a section orphans the claims that pointed into it.** Removing superseded
+  material is right; leaving "proved in § X" in four other files pointing at a section that
+  no longer exists is how a theorem ends up with no proof anywhere in the live record. Guard:
+  in the same turn as the deletion, grep the removed labels across the repository, and either
+  repoint them at where the proof now lives (a commit hash counts) or delete them.
+- ⚠ **An audit report is not a record.** It is an evaluation, written in one pass, and it
+  overclaims like anything else. Guard: nothing downstream may cite an audit as evidence —
+  cite what the audit *checked*. Apply its proposed corrections by your own decision, in a
+  separate turn.
 
 ## G. Git, files, and process
 

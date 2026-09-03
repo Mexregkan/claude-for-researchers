@@ -33,6 +33,8 @@ domain as a function of their spectral parameters, using the Rankin–Selberg un
   CODE** (see the standing rule below). One `symptom → cause → guard` entry per class of
   mistake this project has hit; the full story of each lives in workbook.tex / CHANGELOG.md.
 - **numerics/** — computation scripts. `README.md` inside explains each file.
+- **audits/** — document evaluation reports from `/doc-audit`. Evaluations, never canonical
+  truth: nothing downstream may cite an audit as evidence. Delete this line if unused.
 - **handoff/** — the mailbox shared with the other agent. `INBOX.md` is the index;
   it is the ONLY file here you read at session start. Delete this line (and the
   "Handover" section below) if only one agent works in this repo.
@@ -179,6 +181,13 @@ on a check, not in the summary — and the summary, commit message, `CHANGELOG.m
 workbook section all inherit it. Order of operations: **script passes → `/claim-audit` →
 prose.** Never prose first.
 
+**Audit the document before you rely on it.** `/claim-audit` guards the moment a computation
+becomes prose; `/doc-audit <path>` reads a finished record adversarially — is every headline
+typed, is the cited evidence still reachable, does it agree with the strategy map and the
+changelog? Run it before a document is relied on by a later session, sent to a collaborator
+or another agent, or turned into a paper. It never edits the document: the report lands in
+`audits/` and you decide what to apply.
+
 ## Citations (NON-NEGOTIABLE)
 <!-- Prevents fabricated references. Claude invents citations with full confidence. -->
 
@@ -217,6 +226,9 @@ script. Never include `generated/` content in workbook.tex without my explicit i
   simplest admissible case. Use BEFORE computing, and again after any modification.
 - `/claim-audit` — audit what a passing script actually established, before writing prose.
   Use AFTER the script passes and BEFORE any summary, commit message or workbook section.
+- `/doc-audit <path>` — hostile, evidence-bound evaluation of ONE document (workbook section,
+  bigPicture.tex, strategy-map.md, brief.tex, a handoff message, a paper draft). Writes a
+  report to `audits/`; never edits the document.
 - `/overleaf-sync` — sync the `Overleaf/` git clone of a shared paper: status/pull/diff/publish.
   Only if you collaborate on Overleaf via its git remote. Remove this line otherwise.
 - `/write-pipeline`, `/check-pipeline`, `/apply-pipeline` — the Pipeline workflow (see the
